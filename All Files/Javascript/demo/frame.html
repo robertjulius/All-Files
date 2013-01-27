@@ -1,0 +1,1499 @@
+
+
+
+
+
+<html>
+  <head>
+    <title>MKS Integrity 2009</title>
+
+    <script type="text/javascript">
+        // Set our base href
+        var baseHref = location.protocol + "//" + location.host + "/__/4.10.0.9049.006.01/";
+        document.write("<base href='" + baseHref + "'></base>");
+
+        // this tells qooxdoo what application
+        // class to instantiate at startup
+        
+        qxsettings = new Object();
+        qxsettings["qx.application"] = "mks.Application";
+        qxsettings["qx.theme"] = "qx.theme.ClassicLunaBlue";
+        qxsettings["qx.baseUri"] = baseHref;
+        qxsettings["qx.resourceUri"] = baseHref + "scripts/qooxdoo/resource/qx";
+     </script>
+
+    <link rel="shortcut icon" href="images/favicon.ico"  /> 
+    <link rel="stylesheet" href="resources/previewTable.css">
+
+
+    <style>
+    span.mks_richcontent table {
+ font-size: 10pt;
+ font-family: arial, sans-serif;
+ color: black;
+}
+
+span.mks_richcontent {
+ font-size: 10pt;
+ font-family: arial, sans-serif;
+ color: black;
+}
+
+p {
+ margin-top: 0pt;
+ margin-left: 0pt;
+ margin-bottom: .0001pt;
+ margin-right: 0pt;
+}
+
+
+    </style>
+
+    
+  </head>
+    <body style="padding: 0px; margin: 0px" >
+
+	<table id="INITIAL_LOAD_MSG" border="0" width="100%" height="100%" style="padding: 0px; margin: 0px" >
+		<tr style="padding: 0px; margin: 0px">
+			<td align="center" valign="middle" 
+                            style="font-family: 'Lucida Grande', 'Tahoma', 'Verdana'; font-size: 13px; padding: 0px; margin: 0px">
+				<img src="images/ci/wait.gif" border="0" />
+				Loading...			
+			</td>
+		</tr>
+	</table>
+ 
+<script type="text/javascript" src="scripts/json/jsonrpc.js"></script>
+
+<!--  Our main application scripts -->
+<script type="text/javascript" src="scripts/qooxdoo/script/mks.js"></script>
+<script type="text/javascript" src="scripts/ci.default.js"></script>
+<script type="text/javascript" src="scripts/custom.js"></script>
+
+<script type="text/javascript" src="scripts/ci.defaultRB.js"></script>
+
+<script type="text/javascript" src="scripts/ci.defaultRB_de.js"></script>
+
+<script type="text/javascript" src="scripts/ci.defaultRB_de_US.js"></script>
+
+
+<!--  
+Xinha configuration. Always load after Qooxdoo since Qooxdoo will supplement the
+Array definition to include Javascript 1.6 language features. Xinha also does 
+this for some functions but we want the Qooxdoo ones to override.
+-->
+<script type="text/javascript">
+    _editor_url  = baseHref + "scripts/xinha/"  // absolute URL where Xinha is installed
+    _editor_lang = "en";      // And the language we need to use in the editor.
+</script>
+<script type="text/javascript" src="scripts/xinha/XinhaCore.js"></script>
+
+<script type="text/javascript">   
+/******************************************************************************
+ * This code was taken from Xinha's XinhaCore.js.
+ * It is used to override the _shortCuts function so we can remove the 
+ * keyboard shortcuts that we do not support (mainly ctrl+j and ctrl+0).
+ * If we update our Xinha thirdparty software, we need to make sure that any
+ * changes to this method gets propogated over.
+ *****************************************************************************/    
+
+Xinha.prototype._shortCuts=function(ev){
+    var key=this.getKey(ev).toLowerCase();
+    var cmd=null;
+    var value=null;
+    switch(key){
+        case "b": cmd="bold"; break;
+        case "i": cmd="italic"; break;
+        case "u": cmd="underline"; break;
+        case "s": cmd="strikethrough"; break;
+        case "l": cmd="justifyleft"; break;
+        case "e": cmd="justifycenter"; break;
+        case "r": cmd="justifyright"; break;
+        case "z": cmd="undo"; break;
+        case "y": cmd="redo"; break;
+        case "v": cmd="paste"; break;
+        case "n": 
+            cmd="formatblock"; 
+            value="p"; 
+            break;
+        case "1":
+        case "2":
+        case "3":
+        case "4":
+        case "5":
+        case "6":
+            cmd="formatblock";
+            value="h"+key;
+            break;
+    }
+    if(cmd){
+        this.execCommand(cmd,false,value);
+        Xinha._stopEvent(ev);
+    }
+};
+
+/*****************************************************************************
+ * End of _shortCuts function override.
+ ****************************************************************************/
+ 
+/*****************************************************************************
+ * This code is meant to destroy the xinha editor in a nice way.
+ * Removes all registered button references and removes itself from the 
+ * __xinhas array.  If all editors have been disposed, this function will 
+ * also remove everything (literally everything) from the global freeList.
+ ****************************************************************************/
+Xinha.prototype._dispose=function(){
+    if (this.config.btnList) {
+        for(var i in this.config.btnList){
+            this.config.btnList[i] = null;
+        }
+        this.config.btnList = null;
+    }
+    
+    for(var i = __xinhas.length; i >= 0; i--){
+        var xinhaEditor = __xinhas[i];
+        if (xinhaEditor && xinhaEditor == this) {
+            xinhaEditor = null;
+            __xinhas.splice(i, 1);
+        }
+    }
+    
+    if (__xinhas.length == 0) {
+        Xinha.collectGarbageForIE();
+        // No editor has been activated anymore, they're all gone.
+        Xinha._someEditorHasBeenActivated=false;
+    }
+    
+    // A global variable that must be set to null if
+    // it was pointing at this.
+    if (Xinha._currentlyActiveEditor == this)
+        Xinha._currentlyActiveEditor = null;
+};
+ 
+/*****************************************************************************
+ * End of _dispose function.
+ ****************************************************************************/
+
+/******************************************************************************
+ * This code was taken from Xinha's XinhaCore.js.
+ * It has been modified to empty the toFree list when finished cleaning up.
+ * Since our web app doesn't do page transitions, this function isn't just
+ * for IE anymore.
+ ****************************************************************************/
+
+Xinha.collectGarbageForIE=function(){
+    // Firefox and IE8+ are both smart enough to take care of the below
+    // by themselves.  So we don't do the freeing for them to save time.
+    if (Xinha.is_ie && Xinha.ie_version<8) {
+        Xinha.flushEvents();
+        for(var x=0;x<Xinha.toFree.length;x++){
+        	Xinha.free(Xinha.toFree[x].o,Xinha.toFree[x].p);
+        	Xinha.toFree[x].o=null;
+        }
+    }
+    // Need this though, to make sure everything is unpinned for freeing
+    Xinha.toFree = [];
+};
+
+/*****************************************************************************
+ * End of collectGarbageForIE function.
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Override the free function.
+ * Code taken from Xinha's XinaCore.js.
+ * It has been modified to set the property to undefined so that the checks
+ * of the form "typeof variable == 'undefined'" will pass within XinhaCore.js.
+ * Without this, some objects that are null aren't re-created when they should
+ * be, resulting in a NPE.
+ ****************************************************************************/
+Xinha.free=function(obj,prop){
+    if(obj&&!prop){
+        for(var p in obj){
+            Xinha.free(obj,p);
+        }
+    }else if (obj) {
+        if(prop.indexOf("src")==-1){
+            try{
+                obj[prop]=null;
+                obj[prop]=undefined;
+            } catch(x){}
+        }
+    }
+};
+
+/*****************************************************************************
+ * End of free function
+ ****************************************************************************/
+
+/******************************************************************************
+ * This code was taken from Xinha's XinhaCore.js.
+ * It is used to override the generate function so we can load and activate the
+ * editor all in one step (user only has to click once on the editor).  Also,
+ * override the "submit" function to remove the update to the underlying text
+ * area, as we already do that up above.
+ * If we update our Xinha thirdparty software, we need to make sure that any
+ * changes to this method gets propogated over.
+ * Be sure that new plugins being loaded are added to loadPluginsForActivation in
+ * EditIssueView.  Also, this method now sets the style.display of the displayElement
+ * to none to make it disappear on-time.  Make sure not to remove that.
+ *****************************************************************************/ 
+// Creates the Xinha object and replaces the textarea with it.
+Xinha.prototype.generate=function(){
+    if(!Xinha.isSupportedBrowser){
+        return;
+    }
+    var i;
+    var editor=this;
+    var url;
+    var found=false;
+    var links=document.getElementsByTagName("link");
+    if(!document.getElementById("XinhaCoreDesign")){
+        _editor_css=(typeof _editor_css=="string")?_editor_css:"Xinha.css";
+        for(i=0;i<links.length;i++){
+            if((links[i].rel=="stylesheet")&&(links[i].href==_editor_url+_editor_css)){
+                found=true;
+            }
+        }
+        if(!found){
+            Xinha.loadStyle(_editor_css,null,"XinhaCoreDesign",true);
+        }
+    }
+    if(_editor_skin!==""&&!document.getElementById("XinhaSkin")){
+        found=false;
+        for(i=0;i<links.length;i++){
+            if((links[i].rel=="stylesheet")&&(links[i].href==_editor_url+"skins/"+_editor_skin+"/skin.css")){
+                found=true;
+            }
+        }
+        if(!found){
+            Xinha.loadStyle("skins/"+_editor_skin+"/skin.css",null,"XinhaSkin");
+        }
+    }
+    if(Xinha.is_ie){
+        url=_editor_url+"modules/InternetExplorer/InternetExplorer.js";
+	    if(!Xinha.loadPlugins([{plugin:"InternetExplorer",url:url}],function(){
+            editor.generate();
+        })){
+            return false;
+        }
+        editor._browserSpecificPlugin=editor.registerPlugin("InternetExplorer");
+    } else if (Xinha.is_webkit) {  
+        url = _editor_url + 'modules/WebKit/WebKit.js';  
+	    if ( !Xinha.loadPlugins([{plugin:"WebKit",url:url}],function(){
+	        editor.generate(); } ) ) {              
+            return false;  
+        }  
+        editor._browserSpecificPlugin = editor.registerPlugin('WebKit');  
+    } else if (Xinha.is_gecko){  
+        url=_editor_url+"modules/Gecko/Gecko.js";
+	    if(!Xinha.loadPlugins([{plugin:"Gecko",url:url}],function(){
+            editor.generate();
+        })){
+            return false;
+        }
+        editor._browserSpecificPlugin=editor.registerPlugin("Gecko");
+    }
+    if(typeof Dialog=="undefined"&&!Xinha._loadback(_editor_url+"modules/Dialogs/dialog.js",this.generate,this)){
+        return false;
+    }
+    if(typeof Xinha.Dialog=="undefined"&&!Xinha._loadback(_editor_url+"modules/Dialogs/inline-dialog.js",this.generate,this)){
+        return false;
+    }
+    url=_editor_url+"modules/FullScreen/full-screen.js";
+    if(!Xinha.loadPlugins([{plugin:"FullScreen",url:url}],function(){
+        editor.generate();
+    })){
+        return false;
+    }
+    url=_editor_url+"modules/ColorPicker/ColorPicker.js";
+    if(!Xinha.loadPlugins([{plugin:"ColorPicker",url:url}],function(){
+        editor.generate();
+    })){
+        return false;
+    }else{
+        if(typeof ColorPicker!="undefined"){
+            editor.registerPlugin("ColorPicker");
+        }
+    }
+    // Ensure these plugins are registered, if they are loaded
+    if(typeof TableOperations!="undefined"){
+        editor.registerPlugin("TableOperations");
+    }
+    if(typeof ContextMenu!="undefined"){
+        editor.registerPlugin("ContextMenu");
+    }
+    if(typeof PasteText!="undefined"){
+        editor.registerPlugin("PasteText");
+    }
+    if(typeof FindReplace!="undefined"){
+        editor.registerPlugin("FindReplace");
+    }
+    
+    var toolbar=editor.config.toolbar;
+    for(i=toolbar.length;--i>=0;){
+        for(var j=toolbar[i].length;--j>=0;){
+            switch(toolbar[i][j]){
+                case "popupeditor":
+                editor.registerPlugin("FullScreen");
+                break;
+                case "insertimage":
+                url=_editor_url+"modules/InsertImage/insert_image.js";
+                if(typeof Xinha.prototype._insertImage=="undefined"&&
+				    !Xinha.loadPlugins([{plugin:"InsertImage",url:url}],function(){
+                    editor.generate();
+                })){
+                    return false;
+                }else{
+                    if(typeof InsertImage!="undefined"){
+                        editor.registerPlugin("InsertImage");
+                    }
+                }
+                break;
+                case "insertlink":
+                case "createlink":
+                url=_editor_url+"modules/CreateLink/link.js";
+                if(typeof Linker=="undefined"&&
+				    !Xinha.loadPlugins([{plugin:"CreateLink",url:url}],function(){
+                    editor.generate();
+                },url)){
+                    return false;
+                }else{
+                    if(typeof CreateLink!="undefined"){
+                        editor.registerPlugin("CreateLink");
+                    }
+                }
+                break;
+                case "inserttable":
+                url=_editor_url+"modules/InsertTable/insert_table.js";
+			    if(!Xinha.loadPlugins([{plugin:"InsertTable",url:url}],function(){
+                    editor.generate();
+                })){
+                    return false;
+                }else{
+                    if(typeof InsertTable!="undefined"){
+                        editor.registerPlugin("InsertTable");
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    if ( Xinha.is_gecko &&  editor.config.mozParaHandler != 'built-in' ) {
+		var url=_editor_url + 'modules/Gecko/paraHandlerBest.js'
+        if ( !Xinha.loadPlugins([{plugin:"EnterParagraphs",url:url}], function() {
+	        editor.generate(); }) )  {
+            return false;
+        }
+        editor.registerPlugin("EnterParagraphs");
+    }
+    switch(this.config.getHtmlMethod){
+        case "TransformInnerHTML":
+        var getHtmlMethodPlugin=_editor_url+"modules/GetHtml/TransformInnerHTML.js";
+        break;
+        default:
+        var getHtmlMethodPlugin=_editor_url+"modules/GetHtml/DOMwalk.js";
+        break;
+    }
+    if(!Xinha.loadPlugins([{plugin:"GetHtmlImplementation",url:getHtmlMethodPlugin}],function(){
+        editor.generate();
+    })){
+        return false;
+    }else{
+        editor.registerPlugin("GetHtmlImplementation");
+    }
+    this.setLoadingMessage(Xinha._lc("Generate Xinha framework"));
+    this._framework={
+        "table":document.createElement("table"),
+        "tbody":document.createElement("tbody"),
+        "tb_row":document.createElement("tr"),
+        "tb_cell":document.createElement("td"),
+        "tp_row":document.createElement("tr"),
+        "tp_cell":this._panels.top.container,
+        "ler_row":document.createElement("tr"),
+        "lp_cell":this._panels.left.container,
+        "ed_cell":document.createElement("td"),
+        "rp_cell":this._panels.right.container,
+        "bp_row":document.createElement("tr"),
+        "bp_cell":this._panels.bottom.container,
+        "sb_row":document.createElement("tr"),
+        "sb_cell":document.createElement("td")
+    };
+    Xinha.freeLater(this._framework);
+    var fw=this._framework;
+    fw.table.border="0";
+    fw.table.cellPadding="0";
+    fw.table.cellSpacing="0";
+    fw.tb_row.style.verticalAlign="top";
+    fw.tp_row.style.verticalAlign="top";
+    fw.ler_row.style.verticalAlign="top";
+    fw.bp_row.style.verticalAlign="top";
+    fw.sb_row.style.verticalAlign="top";
+    fw.ed_cell.style.position="relative";
+    fw.tb_row.appendChild(fw.tb_cell);
+    fw.tb_cell.colSpan=3;
+    fw.tp_row.appendChild(fw.tp_cell);
+    fw.tp_cell.colSpan=3;
+    fw.ler_row.appendChild(fw.lp_cell);
+    fw.ler_row.appendChild(fw.ed_cell);
+    fw.ler_row.appendChild(fw.rp_cell);
+    fw.bp_row.appendChild(fw.bp_cell);
+    fw.bp_cell.colSpan=3;
+    fw.sb_row.appendChild(fw.sb_cell);
+    fw.sb_cell.colSpan=3;
+    fw.tbody.appendChild(fw.tb_row);
+    fw.tbody.appendChild(fw.tp_row);
+    fw.tbody.appendChild(fw.ler_row);
+    fw.tbody.appendChild(fw.bp_row);
+    fw.tbody.appendChild(fw.sb_row);
+    fw.table.appendChild(fw.tbody);
+    var xinha=this._framework.table;
+    this._htmlArea=xinha;
+    Xinha.freeLater(this,"_htmlArea");
+    xinha.className="htmlarea";
+    this._framework.tb_cell.appendChild(this._createToolbar());
+    var iframe=document.createElement("iframe");
+    iframe.src=this.popupURL(editor.config.URIs.blank);
+    iframe.id="XinhaIFrame_"+this._textArea.id;
+    this._framework.ed_cell.appendChild(iframe);
+    this._iframe=iframe;
+    this._iframe.className="xinha_iframe";
+    Xinha.freeLater(this,"_iframe");
+    var statusbar=this._createStatusBar();
+    this._framework.sb_cell.appendChild(statusbar);
+    var textarea=this._textArea;
+    textarea.parentNode.insertBefore(xinha,textarea);
+    textarea.className="xinha_textarea";
+    Xinha.removeFromParent(textarea);
+    this._framework.ed_cell.appendChild(textarea);
+    Xinha.addDom0Event(this._textArea,"click",function(){
+        if(Xinha._currentlyActiveEditor!=this){
+            editor.updateToolbar();
+        }
+        return true;
+    });
+    if(textarea.form){
+        Xinha.prependDom0Event(this._textArea.form,"submit",function(){
+            editor.firePluginEvent("onBeforeSubmit");
+            ///// Change here /////
+            // We're doing this in our own submit function - don't do it again
+            // or we'll lose our rich text tag and any other special fiddling
+            // we did above
+            //editor._textArea.value=editor.outwardHtml(editor.getHTML());
+            return true;
+        });
+        var initialTAContent=textarea.value;
+        Xinha.prependDom0Event(this._textArea.form,"reset",function(){
+            editor.setHTML(editor.inwardHtml(initialTAContent));
+            editor.updateToolbar();
+            return true;
+        });
+        if(!textarea.form.xinha_submit){
+            try{
+                textarea.form.xinha_submit=textarea.form.submit;
+                textarea.form.submit=function(){
+                    this.onsubmit();
+                    this.xinha_submit();
+                };
+
+            }
+            catch(ex){
+            }
+        }
+    }
+    Xinha.prependDom0Event(window,"unload",function(){
+        editor.firePluginEvent("onBeforeUnload");
+        textarea.value=editor.outwardHtml(editor.getHTML());
+        if(!Xinha.is_ie){
+            xinha.parentNode.replaceChild(textarea,xinha);
+        }
+        return true;
+    });
+    textarea.style.display="none";
+    // IMPORTANT: This must stay here if we are to hide the display element.
+    // If you update this method, be sure not to remove this.
+    if (this._mks_displayElementToHide) {
+        this._mks_displayElementToHide.style.display="none";
+    }
+    editor.initSize();
+    this.setLoadingMessage(Xinha._lc("Finishing"));
+    editor._iframeLoadDone=false;
+    if(Xinha.is_opera){
+        Xinha._addEvent(this._iframe.contentWindow,"load",function(e){
+            if(!editor._iframeLoadDone){
+                editor._iframeLoadDone=true;
+                editor.initIframe();
+                ///// Change here /////
+                editor.beginningValue = editor.outwardHtml(editor.getHTML());
+            }
+            return true;
+        });
+    }else{
+        Xinha._addEvent(this._iframe,"load",function(e){
+            if(!editor._iframeLoadDone){
+                editor._iframeLoadDone=true;
+                editor.initIframe();
+                ///// Change here /////
+                if(Xinha.is_ie || isSupportedFirefoxVersion()) {
+                    editor.activateEditor();
+                    editor._iframe.contentWindow.focus();
+                }
+                editor.beginningValue = editor.outwardHtml(editor.getHTML());
+            }
+            return true;
+        });
+    }
+    
+    // Check to see if we're trying to use a Firefox client that's older than 1.5,
+    // because all previous versions to 1.5 have a problem with setting the focus
+    // and AutoComplete trying to lose focus (essentially it causes the xinha editor
+    // to do strange things).
+    var isSupportedFirefoxVersion = function() {
+        var identifier = navigator.userAgent;
+        var index = identifier.indexOf("Firefox");
+        if(index == -1) return false;
+        var version = parseFloat(identifier.substring(index+8));
+        if(version >= 1.5) return true;
+        else return false;
+    };
+};
+
+/*****************************************************************************
+ * End of generate function override.
+ ****************************************************************************/
+
+/*****************************************************************************
+ * This code was taken from Xinha's XinhaCore.js.
+ * It is used to override the sizeEditor function so we can properly calculate
+ * the size of the editor height for Firefox.  See notes in item 88802.
+ * If we update our Xinha thirdparty software, we need to make sure that any
+ * changes to this method gets propogated over.
+ *****************************************************************************/ 
+/**
+ *  Size the editor to a specific size, or just refresh the size (when window resizes for example)
+ *  @param width optional width (CSS specification)
+ *  @param height optional height (CSS specification)
+ *  @param includingBars optional boolean to indicate if the size should include or exclude tool & status bars
+ */
+Xinha.prototype.sizeEditor=function(width,height,includingBars,includingPanels){
+    if(this._risizing){
+        return;
+    }
+    this._risizing=true;
+    this.notifyOf("before_resize",{width:width,height:height});
+    this.firePluginEvent('onBeforeResize', width, height);
+    this._iframe.style.height="100%";
+    this._textArea.style.height="100%";
+    this._iframe.style.width="";
+    this._textArea.style.width="";
+    if(includingBars!==null){
+        this._htmlArea.sizeIncludesToolbars=includingBars;
+    }
+    if(includingPanels!==null){
+        this._htmlArea.sizeIncludesPanels=includingPanels;
+    }
+    if(width){
+        this._htmlArea.style.width=width;
+        if(!this._htmlArea.sizeIncludesPanels){
+            var rPanel=this._panels.right;
+            if(rPanel.on&&rPanel.panels.length&&Xinha.hasDisplayedChildren(rPanel.div)){
+                this._htmlArea.style.width=(this._htmlArea.offsetWidth+parseInt(this.config.panel_dimensions.right,10))+"px";
+            }
+            var lPanel=this._panels.left;
+            if(lPanel.on&&lPanel.panels.length&&Xinha.hasDisplayedChildren(lPanel.div)){
+                this._htmlArea.style.width=(this._htmlArea.offsetWidth+parseInt(this.config.panel_dimensions.left,10))+"px";
+            }
+        }
+    }
+    
+    ///// Added everything with numRows /////
+    var numRows = 0;
+    if(height){
+        this._htmlArea.style.height=height;
+        if(!this._htmlArea.sizeIncludesToolbars){
+            // Remove the 'em' from the number of rows
+            numRows = height.substring(0,height.length - 2);
+            this._htmlArea.style.height=((numRows * 16)+this._toolbar.offsetHeight+this._statusBar.offsetHeight)+"px";
+        }
+        if(!this._htmlArea.sizeIncludesPanels){
+            var tPanel=this._panels.top;
+            if(tPanel.on&&tPanel.panels.length&&Xinha.hasDisplayedChildren(tPanel.div)){
+                this._htmlArea.style.height=(this._htmlArea.offsetHeight+parseInt(this.config.panel_dimensions.top,10))+"px";
+            }
+            var bPanel=this._panels.bottom;
+            if(bPanel.on&&bPanel.panels.length&&Xinha.hasDisplayedChildren(bPanel.div)){
+                this._htmlArea.style.height=(this._htmlArea.offsetHeight+parseInt(this.config.panel_dimensions.bottom,10))+"px";
+            }
+        }
+    }
+    width=this._htmlArea.offsetWidth;
+    if(numRows != 0) {
+        height = numRows * 16 + this._toolbar.offsetHeight;
+    } else {
+        height=this._htmlArea.offsetHeight;
+    }
+    var panels=this._panels;
+    var editor=this;
+    var col_span=1;
+    function panel_is_alive(pan){
+        if(panels[pan].on&&panels[pan].panels.length&&Xinha.hasDisplayedChildren(panels[pan].container)){
+            panels[pan].container.style.display="";
+            return true;
+        }else{
+            panels[pan].container.style.display="none";
+            return false;
+        }
+    }
+    if(panel_is_alive("left")){
+        col_span+=1;
+    }
+    if(panel_is_alive("right")){
+        col_span+=1;
+    }
+    this._framework.tb_cell.colSpan=col_span;
+    this._framework.tp_cell.colSpan=col_span;
+    this._framework.bp_cell.colSpan=col_span;
+    this._framework.sb_cell.colSpan=col_span;
+    if(!this._framework.tp_row.childNodes.length){
+        Xinha.removeFromParent(this._framework.tp_row);
+    }else{
+        if(!Xinha.hasParentNode(this._framework.tp_row)){
+            this._framework.tbody.insertBefore(this._framework.tp_row,this._framework.ler_row);
+        }
+    }
+    if(!this._framework.bp_row.childNodes.length){
+        Xinha.removeFromParent(this._framework.bp_row);
+    }else{
+        if(!Xinha.hasParentNode(this._framework.bp_row)){
+            this._framework.tbody.insertBefore(this._framework.bp_row,this._framework.ler_row.nextSibling);
+        }
+    }
+    if(!this.config.statusBar){
+        Xinha.removeFromParent(this._framework.sb_row);
+    }else{
+        if(!Xinha.hasParentNode(this._framework.sb_row)){
+            this._framework.table.appendChild(this._framework.sb_row);
+        }
+    }
+    this._framework.lp_cell.style.width=this.config.panel_dimensions.left;
+    this._framework.rp_cell.style.width=this.config.panel_dimensions.right;
+    this._framework.tp_cell.style.height=this.config.panel_dimensions.top;
+    this._framework.bp_cell.style.height=this.config.panel_dimensions.bottom;
+    this._framework.tb_cell.style.height=this._toolBar.offsetHeight+"px";
+    this._framework.sb_cell.style.height=this._statusBar.offsetHeight+"px";
+    var edcellheight=height-this._toolBar.offsetHeight-this._statusBar.offsetHeight;
+    if(panel_is_alive("top")){
+        edcellheight-=parseInt(this.config.panel_dimensions.top,10);
+    }
+    if(panel_is_alive("bottom")){
+        edcellheight-=parseInt(this.config.panel_dimensions.bottom,10);
+    }
+    this._iframe.style.height=edcellheight+"px";
+    var edcellwidth=width;
+    if(panel_is_alive("left")){
+        edcellwidth-=parseInt(this.config.panel_dimensions.left,10);
+    }
+    if(panel_is_alive("right")){
+        edcellwidth-=parseInt(this.config.panel_dimensions.right,10);
+    }
+
+    var iframeWidth = (this.config.iframeWidth)? parseInt(this.config.iframeWidth,10): null;   
+    this._iframe.style.width = (iframeWidth && iframeWidth < edcellwidth)? iframeWidth + "px": edcellwidth + "px";   
+ 
+    this._textArea.style.height=this._iframe.style.height;
+    this._textArea.style.width=this._iframe.style.width;
+    this.notifyOf("resize",{width:this._htmlArea.offsetWidth,height:this._htmlArea.offsetHeight});
+    this.firePluginEvent('onResize',this._htmlArea.offsetWidth, this._htmlArea.offsetWidth); 
+    this._risizing=false;
+};
+
+/******************************************************************************
+ * End of sizeEditor function override.
+ ******************************************************************************/
+
+/******************************************************************************
+ * This code was taken from Xinha's XinhaCore.js.
+ * It is used to override the _wordClean function so we don't remove as much
+ * attribute data.  See item 90014.
+ * If we update our Xinha thirdparty software, we need to make sure that any
+ * changes to this method gets propogated over.
+ *****************************************************************************/ 
+Xinha.prototype._wordClean=function(){
+    var editor=this;
+    function clearClass(node){
+        var newc=node.className.replace(/(^|\s)mso.*?(\s|$)/ig," ");
+        if(newc!=node.className){
+            node.className=newc;
+            if(!(/\S/.test(node.className))){
+                node.removeAttribute("className");
+            }
+        }
+    }
+    function clearStyle(node){
+        var declarations=node.style.cssText.split(/\s*;\s*/);
+        for(var i=declarations.length;--i>=0;){
+            ///// Change here /////
+            if(/^mso|^tab-stops/i.test(declarations[i])){
+                declarations.splice(i,1);
+            }
+        }
+        node.style.cssText=declarations.join("; ");
+    }
+    var stripTag=null;
+    if(Xinha.is_ie){
+        stripTag=function(el){
+            el.outerHTML=Xinha.htmlEncode(el.innerText);
+        };
+
+    }else{
+        stripTag=function(el){
+            var txt=document.createTextNode(Xinha.getInnerText(el));
+            el.parentNode.insertBefore(txt,el);
+            Xinha.removeFromParent(el);
+        };
+
+    }
+    function checkEmpty(el){
+        if(/^(span|b|strong|i|em|font|div|p)$/i.test(el.tagName)&&!el.firstChild){
+            Xinha.removeFromParent(el);
+        }
+    }
+    function parseTree(root){
+        var tag=root.tagName.toLowerCase(),i,next;
+        if((Xinha.is_ie&&root.scopeName!="HTML")||(!Xinha.is_ie&&(/:/.test(tag)))){
+            stripTag(root);
+            return false;
+        }else{
+            clearClass(root);
+            clearStyle(root);
+            for(i=root.firstChild;i;i=next){
+                next=i.nextSibling;
+                if(i.nodeType==1&&parseTree(i)){
+                    checkEmpty(i);
+                }
+            }
+        }
+        return true;
+    }
+    parseTree(this._doc.body);
+    this.updateToolbar();
+};
+/******************************************************************************
+ * End of _cleanWord function override
+ ******************************************************************************/
+
+/******************************************************************************
+ * This is used to provide the getDoctype method that doesn't appear to exist
+ * in XinhaCore.js, although it is required.
+ ******************************************************************************/
+Xinha.prototype.getDoctype = function() {
+    return "";
+}
+/******************************************************************************
+ * End of getDoctype function
+ ******************************************************************************/
+
+/******************************************************************************
+ * This code was taken from Xinha's XinhaCore.js.
+ * It is used to override the _colorSelector function so we can use the old
+ * popup-style dialog box to choose a color, because the new one uses style
+ * tags to colour the text, rather than the old popup which uses font tags.
+ * (scrubber would need to be changed)
+ * If we update our Xinha thirdparty software, we need to make sure that any
+ * changes to this method gets propogated over.
+ *****************************************************************************
+ *
+ * Open a popup to select the hilitecolor or forecolor
+ *
+ * @param {String} cmdID The commande ID (hilitecolor or forecolor)
+ * @private
+ */
+Xinha.prototype._colorSelector = function(cmdID) {
+    var editor = this;    // for nested functions
+    
+    // backcolor only works with useCSS/styleWithCSS (see mozilla bug #279330 & Midas doc)
+    // and its also nicer as <font>
+    if ( Xinha.is_gecko && cmdID == 'hilitecolor') {
+        try {
+            editor._doc.execCommand('useCSS', false, false); // useCSS deprecated & replaced by styleWithCSS
+            editor._doc.execCommand('styleWithCSS', false, true);
+        } catch (ex) {}
+    }
+
+    var btn = editor._toolbarObjects[cmdID].element;
+    var initcolor;
+    if ( cmdID == 'hilitecolor' ) {
+        if ( Xinha.is_ie ) {
+            cmdID = 'backcolor';
+            initcolor = Xinha._colorToRgb(editor._doc.queryCommandValue("backcolor"));
+        } else {
+            initcolor = Xinha._colorToRgb(editor._doc.queryCommandValue("hilitecolor"));
+        }
+    } else {
+        initcolor = Xinha._colorToRgb(editor._doc.queryCommandValue("forecolor"));
+    }
+    var cback = function(color) {editor._doc.execCommand(cmdID, false, color); };
+    if ( Xinha.is_ie ) {
+        var range = editor.createRange(editor.getSelection());
+        cback = function(color) {
+            range.select();
+            editor._doc.execCommand(cmdID, false, color);
+        };
+    }
+    
+    // Open the old popup-style of dialog for the color selector, just because
+    // the newer version doesn't do modality or work when editor is in full
+    // screen mode. (*** The modality and full screen bug has been fixed in 
+    // Xinha 0.94, but it uses styles to input the colour, rather than the way
+    // we do it now in font tags - it means the scrubber would have to be
+    // changed, but since we don't want to let them use style tags anyway ...)
+    this._popupDialog(editor.config.URIs.select_color,
+        function(color) {
+            // selection not canceled
+            if ( color ) {
+                editor._doc.execCommand(cmdID, false, "#" + color);
+            }
+            editor.updateToolbar();
+        },
+        Xinha._colorToRgb(this._doc.queryCommandValue(cmdID)));
+};
+/******************************************************************************
+ * End of _colorSelector function override
+ ******************************************************************************/
+
+ /****************************************************************************** 
+  * This code was taken from Xinha's htmlarea.js. 
+  * It is used to override the fixRelativeLinks function since it makes url  
+  * liniks relative (and we don't want that).  First of all, the output of this  
+  * function was not consistent, second, when links are relative, they don't work
+
+  * in GUI (Defect 110419). If we update our Xinha thirdparty software,  
+  * we need to make sure that any changes to this method gets propogated over. 
+  *****************************************************************************/ 
+HTMLArea.prototype.fixRelativeLinks = function(html) 
+{ 
+   return html; 
+}; 
+ /****************************************************************************** 
+  * End of fixRelativeLinks function override 
+  ******************************************************************************/ 
+
+ /****************************************************************************** 
+  * This code was taken from Xinha's XinhaCore.js. 
+  * It is used to override the outwardHtml function since it erroneously adds
+  * hostname and port to any string with src/href/background text, regardless
+  * of whether it's in a tag or not  
+  * 
+  * If we update our Xinha thirdparty software,  
+  * we need to make sure that any changes to this method gets propogated over. 
+  *****************************************************************************/ 
+Xinha.prototype.outwardHtml=function(html){
+for(var i in this.plugins){
+var _17c=this.plugins[i].instance;
+if(_17c&&typeof _17c.outwardHtml=="function"){
+html=_17c.outwardHtml(html);
+}
+}
+html=html.replace(/<(\/?)b(\s|>|\/)/ig,"<$1strong$2");
+html=html.replace(/<(\/?)i(\s|>|\/)/ig,"<$1em$2");
+html=html.replace(/<(\/?)strike(\s|>|\/)/ig,"<$1del$2");
+html=html.replace(/(<[^>]*on(click|mouse(over|out|up|down))=['"])if\(window\.parent &amp;&amp; window\.parent\.Xinha\)\{return false\}/gi,"$1");
+var _17d=location.href.replace(/(https?:\/\/[^\/]*)\/.*/,"$1")+"/";
+html=html.replace(/https?:\/\/null\//g,_17d);
+html=this.outwardSpecialReplacements(html);
+html=this.fixRelativeLinks(html);
+if(this.config.sevenBitClean){
+html=html.replace(/[^ -~\r\n\t]/g,function(c){
+return "&#"+c.charCodeAt(0)+";";
+});
+}
+html=html.replace(/(<script[^>]*((type=[\"\']text\/)|(language=[\"\'])))(freezescript)/gi,"$1javascript");
+if(this.config.fullPage){
+html=Xinha.stripCoreCSS(html);
+}
+if(typeof this.config.outwardHtml=="function"){
+html=this.config.outwardHtml(html);
+}
+return html;
+};
+ /****************************************************************************** 
+  * End of outwardHtml function override 
+  ******************************************************************************/ 
+
+/****************************************************************************** 
+ * This code was taken from Xinha's XinhaCore.js. 
+ * It is used to override the _editorEvent function since it erroneously adds
+ * hostname and port to any string with src/href/background text, regardless
+ * of whether it's in a tag or not  
+ * 
+ * If we update our Xinha thirdparty software,  
+ * we need to make sure that any changes to this method gets propogated over. 
+ *****************************************************************************/ 
+Xinha.prototype._editorEvent = function(ev) {
+	var editor = this;
+	//call events of textarea
+	if ( typeof editor._textArea['on'+ev.type] == "function" ) {
+	    editor._textArea['on'+ev.type]();
+	}
+    if ( this.isKeyEvent(ev) ) {
+	    // Run the ordinary plugins first
+	    if(editor.firePluginEvent('onKeyPress', ev)) {
+	        return false;
+	    }
+	    // Handle the core shortcuts
+	    if ( this.isShortCut( ev ) ) {
+	        this._shortCuts(ev);
+	    }
+	}
+	if ( ev.type == 'mousedown' ) {
+	    if(editor.firePluginEvent('onMouseDown', ev)) {
+	        return false;
+	    }
+	}
+	
+	// **************** Added ****************
+	if ( ev.type == 'mouseup' ) {
+	    if(editor.firePluginEvent('onMouseUp', ev)) {
+	        return false;
+	    }
+	}
+	// **************** End Add **************
+	
+	// update the toolbar state after some time
+	if ( editor._timerToolbar ) {
+	    clearTimeout(editor._timerToolbar);
+	}
+	editor._timerToolbar = setTimeout(
+	    function() {
+	        editor.updateToolbar();
+	        editor._timerToolbar = null;
+	    },
+	    250);
+};
+ 
+/****************************************************************************** 
+ * End of _editorEvent function override 
+ ******************************************************************************/ 
+ 
+/******************************************************************************
+ * If we ever decide to do Fixed Width in Rich Content fields, the functions
+ * below can be used to wrap the current selection in <code> tags, taking into
+ * account the positions of other tags and valid locations to place the current
+ * <code> tag.  Note, these functions don't take into account removing <code>
+ * tags, and it also only works in Mozilla based browsers, not IE (until IE
+ * decides to support the W3C DOM Level 2 standards).
+ ******************************************************************************/    
+/*    Xinha.prototype.execCodeCommand = function() {
+        this.focusEditor();
+        var sel = this._getSelection();
+        var range = this._createRange(sel);
+
+        if(sel.isCollapsed) return;
+        
+        var SC = range.startContainer;
+        var EC = range.endContainer;
+        var SO = range.startOffset;
+        var EO = range.endOffset;
+        
+        // First, make sure both containers are pointing to text nodes.
+        // If they currently aren't, go down the front/back of the node tree
+        // until you hit a text node.
+        while(!this.validCodeNode(SC)) {
+            SC = SC.firstChild;
+            SO = 0;
+        }
+        while(!this.validCodeNode(EC)) {
+            EC = EC.lastChild;
+            if(EC.nodeType == 3)
+                EO = EC.nodeValue.length;
+        }
+        
+        // Check to see if the start and end are in the same node
+        if(SC == EC && this.validCodeNode(SC)) {
+            this.wrapRangeInCode(range);
+            return; // Done
+        }
+        
+        // They weren't in the same node, so continue on with the algorithm
+        // Convert the SC node
+        if(SC.nodeType == 3 && SO > 0) {
+            var scNodeRange = document.createRange();
+            scNodeRange.setStart(SC, SO);
+            scNodeRange.setEnd(SC, SC.nodeValue.length);
+            SC = this.wrapRangeInCode(scNodeRange);
+        } else {
+            SC = this.wrapNodeInCode(SC);
+        }
+        
+        // Convert the EC node
+        if(EC.nodeType == 3 && EO < EC.nodeValue.length) {
+            var ecNodeRange = document.createRange();
+            ecNodeRange.setStart(EC, 0);
+            ecNodeRange.setEnd(EC, EO);
+            EC = this.wrapRangeInCode(ecNodeRange);
+        } else {
+            EC = this.wrapNodeInCode(EC);
+        }
+        
+        // Convert everything in between.  Essentially, we're going to walk 
+        // through the DOM tree and convert each safe node between SC and EC
+        var curNode = SC;
+        var arrECAncestors = this.getAncestors(EC);
+        var finished = false;
+        while(!finished) {
+            if(curNode.nextSibling == null) {
+                curNode = curNode.parentNode;
+                //alert("Parent Node = "+curNode.nodeName+" : "+curNode.nodeValue);
+            } else {
+                curNode = curNode.nextSibling;
+                //alert("Sibling Node = "+curNode.nodeName+" : '"+curNode.nodeValue + "'");
+                
+                while(!this.validCodeNode(curNode)) {
+                    curNode = curNode.firstChild;
+                    //alert("Child Node = "+curNode.nodeName+" : "+curNode.nodeValue);
+                } 
+                    
+                while(!finished && this.nodeIsAncestor(curNode, arrECAncestors)) {
+                    curNode = curNode.firstChild;
+                    //alert("Child Node = "+curNode.nodeName+" : "+curNode.nodeValue);
+                }
+                
+                if(curNode == EC) {
+                    break;
+                } else {
+                    curNode = this.wrapNodeInCode(curNode);
+                }
+            }
+        }
+        
+        // This helps us combine the ending node with previous nodes if it's
+        // previous sibling nodes are code nodes too.  That way, we won't have
+        // a string of close code tags followed by open code tags
+        var nodeList = EC.parentNode.childNodes;
+        for(var i=0; i<nodeList.length; i++) {
+            var c = nodeList[i];
+            if(c && (c.nodeType == 1) && (c.tagName.toLowerCase() == "code")) {
+                var pc = c.previousSibling;
+                if(pc && (pc.nodeType == 1) && (pc.tagName.toLowerCase() == "code")) {
+                    var cnList = c.childNodes;
+                    for(var j=0; j<cnList.length; j++) {
+                        pc.appendChild(cnList[j]);
+                    }
+                    c.parentNode.removeChild(c);
+                }
+            }
+        }
+        
+        //this.printTree();
+    };
+    
+    Xinha.prototype.validCodeNode = function(node) {
+        // Out of all the tags we support, these cannot be wrapped by code tags
+        invalid = " p h1 h2 h3 h4 h5 h6 hr ol ul li div blockquote table tbody tr td body ";
+        return (invalid.indexOf(" "+node.tagName.toLowerCase()+" ") == -1);
+    };
+    
+    Xinha.prototype.wrapNodeInCode = function(node) {
+        var ps = node.previousSibling;
+        if(ps && (ps.nodeType == 1) && (ps.tagName.toLowerCase() == "code")) {
+            ps.appendChild(node);
+            return ps;
+        } else {
+            nodeRange = document.createRange();
+            nodeRange.selectNode(node);
+            return this.wrapRangeInCode(nodeRange);
+        }
+    }
+    
+    Xinha.prototype.wrapRangeInCode = function(range) {
+        var contents = range.extractContents();
+        var code = document.createElement("code");
+        code.appendChild(contents);
+        range.insertNode(code);
+        return code;
+    };
+    
+    // Check to see if the given node is part of the ancestor array
+    Xinha.prototype.nodeIsAncestor = function(node, ancestors) {
+        for(var i=0; i<ancestors.length; i++) {
+            if(node == ancestors[i])
+                return true;
+        }
+        return false;
+    };
+    
+    // Get all ancestors of this node (not including this node) that are valid 
+    // code nodes (the code tag can wrap the node)
+    Xinha.prototype.getAncestors = function(node) {
+        var p = node.parentNode;
+        var a = [];
+        //a.push(node);
+        while ( p && (p.nodeType == 1) && (p.tagName.toLowerCase() != 'body')) {
+            if(this.validCodeNode(p)) {
+                a.push(p);
+                p = p.parentNode;
+            } else
+                break;
+        }
+        return a;
+    }
+    
+    Xinha.prototype.printTree = function() {
+        var nlStr = "Body\n";
+        nlStr = this.printNodeList(this._doc.body.childNodes, "    ", nlStr);
+        //alert(nlStr);
+    };
+    
+    Xinha.prototype.printNodeList = function(nodeList, space, nlStr) {
+        for(var i=0; i<nodeList.length; i++) {
+            var child = nodeList[i];
+            nlStr += space + child.nodeName + ":" + child.nodeValue + "\n";
+            if(child.hasChildNodes()) {
+                nlStr = this.printNodeList(child.childNodes, space + "    ", nlStr);
+            }
+        }
+        return nlStr;
+    };
+*/
+/******************************************************************************
+ * End <code> wrapper functions
+ *****************************************************************************/
+ 
+</script>
+
+<script type="text/javascript">
+
+window.commandRunnerID = 7044;
+window.sessionID = "E815E0974F65AEE62B9A8CBEAC93AC5E";
+window.userID = "sabirin.tonny";
+window.timeZoneLabel = "DAVST";
+
+if (mks && mks.frame && mks.frame.Constants) {
+    mks.frame.Constants.DEFAULT_DATE_FORMAT = 
+        "dd.MM.yyyy";
+    mks.frame.Constants.DEFAULT_DATETIME_FORMAT = 
+        "dd.MM.yyyy HH:mm:ss";
+}
+
+// Our servlet path for URL creation
+window.servletPath = "/im";
+window.appName = "MKS Integrity 2009";
+
+// @return the URL for JSON requests to the server
+function getJSONUrl() {
+    return "/JSON-RPC/im;jsessionid=E815E0974F65AEE62B9A8CBEAC93AC5E?mks.commandRunner=" + 
+	commandRunnerID;
+}
+
+// @return the basic URL for non-JSON requests to the server
+function getBaseUrl(commandRunnerID) {
+    if (!commandRunnerID) {
+        commandRunnerID = window.commandRunnerID;
+    }
+    return "/im;jsessionid=E815E0974F65AEE62B9A8CBEAC93AC5E?mks.commandRunner=" + 
+	commandRunnerID;
+}
+
+// Our RPC client
+// Allow a maximum of 2 simultaneous requests to allow for pinging during long
+// running actions
+JSONRpcClient.max_req_active = 2;
+var jsonrpc = new JSONRpcClient(getJSONUrl, null, null, null, ["webAppServer.setServerMessage","webAppServer.getServerMessage","ajaxFilterManager.createHistoryUserFieldFilter","ajaxFilterManager.createAttachmentFieldFilter","ajaxFilterManager.createUserFilter","ajaxFilterManager.createCombinedTestVerdictFilter","ajaxFilterManager.createFieldTypeFilter","ajaxFilterManager.disposeFiltersForContext","webAppServer.actionPerformed","ajaxFilterManager.createQueryDefaultColumnsFilter","ajaxFilterManager.createTestStepsFieldsFilter","ajaxFilterManager.createColumnFieldFilter","ajaxFilterManager.createStateFilter","ajaxFilterManager.createLogicalFilter","ajaxFilterManager.createHistoryDateFieldFilter","ajaxFilterManager.createPossibleValueFilterByIssue","ajaxFilterManager.createOperatorFilter","webAppServer.serverMessageNew","webAppServer.invalidateSession","ajaxFilterManager.createRelationshipFieldFilter","ajaxFilterManager.createRelationshipsViewFieldFilter","ajaxFilterManager.createRelationshipWithoutFVAFieldFilter","ajaxFilterManager.createQueryFilter","ajaxFilterManager.createTestVerdictFilter","ajaxFilterManager.createCPAttributesFilter","ajaxFilterManager.createFieldFilter","webAppServer.ping","ajaxFilterManager.createFESubjectAttributeValueFilter","ajaxFilterManager.createHistoryFieldFilter","ajaxFilterManager.getServer","ajaxFilterManager.createTestVerdictTypeFilter","ajaxFilterManager.setCreationContext","ajaxFilterManager.createRelationshipFilterFieldFilter","ajaxFilterManager.createTestResultEditorFieldsFilter","ajaxFilterManager.dispose","webAppServer.serverMessageCleared","webAppServer.setApplicationPreference","ajaxFilterManager.createTypeFilter","ajaxFilterManager.createFEOperatorFilter","ajaxFilterManager.createTimeEntryFieldFilter","ajaxFilterManager.createPossibleValueFilter","ajaxFilterManager.createTestResultsFieldsFilter","ajaxFilterManager.createUserFilterForHistoryFilter","ajaxFilterManager.createGroupFilter","webAppServer.getHeartbeatInterval"]);
+
+// Global hook for our RPC server
+window.server = jsonrpc.webAppServer;
+
+// Global hook for filter related services
+window.ajaxFilterManager = jsonrpc.ajaxFilterManager;
+
+// initial web application information
+
+window.webAppDef = {"views":[{"ID":"common.aboutboxview","properties":{"Name":"ViewDef.common.aboutboxview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.queries","properties":{"Name":"ViewDef.ci.queries.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.runchartview","properties":{"Name":"ViewDef.ci.runchartview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.runreportview","properties":{"Name":"ViewDef.ci.runreportview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.charts","properties":{"Name":"ViewDef.ci.charts.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.rundashboardview","properties":{"Name":"ViewDef.ci.rundashboardview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.dashboards","properties":{"Name":"ViewDef.ci.dashboards.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.reports","properties":{"Name":"ViewDef.ci.reports.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.issues","properties":{"Name":"ViewDef.ci.issues.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.relationships","properties":{"Name":"ViewDef.ci.relationships.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.timeentriesview","properties":{"Name":"ViewDef.ci.timeentriesview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.prefsandnotification","properties":{"Name":"ViewDef.ci.prefsandnotification.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.reportview","properties":{"Name":"ViewDef.ci.reportview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.editissue","properties":{"Name":"ViewDef.ci.editissue.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.cpview","properties":{"Name":"ViewDef.ci.cpview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"ci.viewquery","properties":{"Name":"ViewDef.ci.viewquery.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"tm.testresulteditorview","properties":{"Name":"ViewDef.tm.testresulteditorview.Name","Category":"MKS Integrity"},"type":"ViewDef"},{"ID":"tm.testresultview","properties":{"Name":"ViewDef.tm.testresultview.Name","Category":"MKS Integrity"},"type":"ViewDef"}],"ID":"ci.default","properties":{"DefaultLayout":"common.defaultlayout","ViewDef.ci.timeentriesview.Layout":"common.defaultlayout","ViewDef.ci.charts.ViewLayout.Actions":"ci.charts.toolpane","ViewDef.ci.issues.ViewLayout.Actions":"ci.issues.toolpane","ViewDef.ci.cpview.Layout":"common.defaultlayout","ViewDef.ci.dashboards.ViewLayout.Actions":"ci.dashboards.toolpane","Creator":"MKS","ConcreteUINamespaces":"mks.ci,mks.si,mks.ic,mks.frame,mks.tm","ViewLayout":"ci.viewlayout","ViewDef.ci.viewquery.Layout":"common.defaultlayout","ViewDef.ci.reportview.Layout":"common.defaultlayout","Name":"default","ShortDescription":"Integrity Manager Web Application","ViewDef.ci.reports.ViewLayout.Actions":"ci.reports.toolpane","ViewDef.ci.editissue.Layout":"common.defaultlayout","ViewDef.common.aboutboxview.Layout":"common.defaultlayout","ViewDef.ci.relationships.ViewLayout.Actions":"ci.relationships.toolpane","InitialAction":"ci.issues","ViewDef.ci.prefsandnotification.Layout":"common.defaultlayout","ViewDef.tm.testresultview.Layout":"common.defaultlayout","ViewDef.ci.queries.ViewLayout.Actions":"ci.queries.toolpane","ViewDef.tm.testresulteditorview.ViewLayout.Actions":"tm.testresulteditorview.toolpane","ViewDef.ci.rundashboardview.ViewLayout.Actions":"ci.rundashboardview.toolpane","ViewDef.ci.runchartview.ViewLayout.Actions":"ci.runchartview.toolpane"},"type":"WebAppDef","layouts":[{"ID":"common.defaultlayout","properties":{"LayoutClass":"mks.frame.DefaultLayout"},"type":"LayoutDef"},{"ID":"ci.viewlayout","properties":{"LayoutClass":"mks.ci.ViewLayout","ViewLayout.Header":"ci.titlepane","ViewLayout.Navigation":"ci.toolpane"},"type":"LayoutDef"}],"actions":[{"ID":"ci.issue.field.relationship.create","properties":{"Name":"Create Related Item","ShortDescription":"Create a related item","HandlerCallback":"onCreateRelatedIssueAction","RequirementsCheckerClass":"mks.ci.SingleValueRelationshipFieldChecker","RequiresInput":"true"},"type":"ActionDef"},{"ID":"ci.copyquery","properties":{"PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.CopyQueryInteractorPlugin","PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.CopyQuery","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIQuery","SimpleRequirementsChecker.Cardinality":"1","Name":"Copy Query","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.CopyQueryInteractorPlugin","PluggableSelectionProvider.MethodName":"addElement","SimpleRequirementsChecker.Flags":"!isVirtual","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","RequiresInput":"true","SmallIcon":"images\/ci\/Copy16.png","SimpleRequirementsChecker.ObjectType":"query","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.createsessionfrom","properties":{"Name":"Create Session From","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$CreateIssuePlugin","CommandToken":"ci.CopyIssue","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","SimpleRequirementsChecker.Flags":"allowsSessions","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.refreshissue","properties":{"Name":"Refresh Item","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.IssuesView$RefreshIssueHandler","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.reportview","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.ReportView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIReport","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"View Report Definition","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SimpleRequirementsChecker.ObjectType":"report","SmallIcon":"images\/ci\/View16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.editreport","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.EditReport","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIReport","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Edit Report","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"report","SmallIcon":"images\/ci\/Edit16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"tm.configviewoptions","properties":{"Name":"Configure View Options","ShortName":"Configure Options","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler"},"type":"ActionDef"},{"ID":"ci.issue.field.relationship.remove","properties":{"ShortDescription":"Remove the related item(s)","Name":"Remove Related Item","HandlerCallback":"onRemoveRelatedIssuesAction","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","RequiresInput":"false","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.issue.field.relationship.copyreplace","properties":{"ShortDescription":"Copy and replace the selected item","Name":"Copy And Replace","HandlerCallback":"onCopyReplaceAction","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.textsearch","properties":{"Name":"Search Items","ShortDescription":"View the items matching a text search","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","CommandToken":"ci.Issues","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.rundashboardview.rerun","properties":{"Name":"Re-Run Dashboard","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunDashboardsView$ViewActionHandler","SmallIcon":"images\/ci\/Run16.png"},"type":"ActionDef"},{"ID":"ci.moveissuelabel","properties":{"CommandToken":"ci.AddLabel","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","SimpleRequirementsChecker.Cardinality":"1","ShortDescription":"ActionDef.ci.moveissuelabel.ShortDescription","Name":"Move Item Label","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$IssueLabelPlugin","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"label","SmallIcon":"images\/ci\/MoveItemLabel.gif","SimpleSettingsProvider.Setting.movelabel":"true","StartType":"Wait"},"type":"ActionDef"},{"ID":"tm.refreshview","properties":{"Name":"Refresh View","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SmallIcon":"images\/ci\/Refresh16.png"},"type":"ActionDef"},{"ID":"common.invokehistory","properties":{"Name":"ActionDef.common.invokehistory.Name","HandlerClass":"mks.ic.common.ui.web.SadWebConcreteView$HistoryInteractorV2"},"type":"ActionDef"},{"ID":"ci.rundashboardview.print","properties":{"Name":"Print Dashboard","Target":"_blank","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunDashboardsView$ViewActionHandler","SmallIcon":"images\/ci\/Print16.png"},"type":"ActionDef"},{"ID":"ci.createquery","properties":{"Name":"Create Query","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.CreateQueryInteractorPlugin","CommandToken":"ci.CreateQuery","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SmallIcon":"images\/ci\/CreateQuery16Web.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"common.aboutbox","properties":{"Name":"About","CommandToken":"common.AboutBox","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.substituteparams","properties":{"Name":"Parameter Substitution","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","isCheckBox":"true","HandlerClass":"mks.ic.ci.ui.web.IssuesView$RefreshIssueHandler","RequiresInput":"false","SimpleSettingsProvider.Setting.substituteParams":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.showchart","properties":{"Name":"Add Chart To Favorites","RequirementsCheckerClass":"mks.ci.SharedObjectRequirementsChecker","SimpleRequirementsChecker.Flags":"!isFavorite","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"chart","SmallIcon":"images\/ci\/AddToFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"chart"},"type":"ActionDef"},{"ID":"ci.viewsicp","properties":{"Name":"View Change Package Details","HandlerCallback":"onViewSICPAction","RequirementsCheckerClass":"mks.ci.IssueCPRequirementsChecker","RequiresInput":"false","SimpleRequirementsChecker.ObjectType":"changepackage","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.printissueview","properties":{"Name":"Print Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$PrintIssuePlugin","CommandToken":"ci.PrintIssueView","Target":"_blank","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","SmallIcon":"images\/ci\/Print16.png","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+","StartType":"Return"},"type":"ActionDef"},{"ID":"ci.hidequery","properties":{"Name":"Remove Query From Favorites","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","SimpleRequirementsChecker.Flags":"isFavorite,!isVirtual,!isQuickQuery","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"query","SmallIcon":"images\/ci\/RemoveFromFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"query"},"type":"ActionDef"},{"ID":"ci.viewcp","properties":{"Name":"View Generic Change Package Details","SimpleSettingsProvider.Setting.showEntries":"true","CommandToken":"ci.CPView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.CPActionHelper","RequiresInput":"false","SimpleRequirementsChecker.ObjectType":"changepackage","SimpleRequirementsChecker.Cardinality":"1","StartType":"Wait"},"type":"ActionDef"},{"ID":"tm.markasfailed","properties":{"Name":"Mark as Failed","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isEdit","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/verdictTypeFailed.gif","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.createissue","properties":{"Name":"Create Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$CreateIssuePlugin","CommandToken":"ci.CreateIssue","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SmallIcon":"images\/ci\/CreateIssue16Web.png","MRUKey":"ci.issue","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.runreportview","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.RunReportView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIReport","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Run Report","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SimpleRequirementsChecker.ObjectType":"report","SmallIcon":"images\/ci\/Run16.png","MRUKey":"ci.report","StartType":"Return"},"type":"ActionDef"},{"ID":"ci.printchartview","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.PrintChartView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIChart","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Print Chart","Target":"_blank","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SimpleRequirementsChecker.ObjectType":"chart","SmallIcon":"images\/ci\/Print16.png","StartType":"Return"},"type":"ActionDef"},{"ID":"tm.addrelateditem","properties":{"Name":"Add Related Item","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isAddRelated","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/AddTRRelatedItem16.png","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.runissuedifferencesreport","properties":{"Name":"Run Item Differences Report","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$DifferencesReportIssuePlugin","CommandToken":"ci.RunReportView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+","StartType":"Return"},"type":"ActionDef"},{"ID":"ci.relationships","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIIssue","CommandToken":"ci.Relationships","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIIssue","SimpleRequirementsChecker.Cardinality":"1+","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.ExplicitListIssueSelection","Name":"View Related Items","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$RelationshipsViewPlugin","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/ViewRelationships16Web.gif","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.runissuereport","properties":{"Name":"Run Item Report","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$ReportIssuePlugin","CommandToken":"ci.RunReportView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+","StartType":"Return"},"type":"ActionDef"},{"ID":"ci.timeentriesview","properties":{"Name":"Time Entries","ShortDescription":"View my time entries","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.TimeEntriesActionHelper","CommandToken":"ci.TimeEntriesView","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","StartType":"Wait"},"type":"ActionDef"},{"ID":"tm.testresulteditor","properties":{"Name":"Test Result Editor","CommandToken":"mks.ic.ci.commands.TestResultEditorCommand","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","ShortName":"Result Editor","SimpleRequirementsChecker.Flags":"isTestSession","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1","StartType":"Exit"},"type":"ActionDef"},{"ID":"tm.viewuntestedtestcases","properties":{"Name":"View Untested Test Cases","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","CommandToken":"mks.ic.ci.commands.ViewUntestedCasesCommand","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","ShortName":"View Untested","SimpleRequirementsChecker.Flags":"isViewUntested","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.hidechart","properties":{"Name":"Remove Chart From Favorites","RequirementsCheckerClass":"mks.ci.SharedObjectRequirementsChecker","SimpleRequirementsChecker.Flags":"isFavorite","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"chart","SmallIcon":"images\/ci\/RemoveFromFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"chart"},"type":"ActionDef"},{"ID":"ci.runchartview.rerun","properties":{"Name":"Re-Run Chart","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunChartsView$ViewActionHandler","SmallIcon":"images\/ci\/Run16.png"},"type":"ActionDef"},{"ID":"ci.hidedashboard","properties":{"Name":"Remove Dashboard From Favorites","RequirementsCheckerClass":"mks.ci.SharedObjectRequirementsChecker","SimpleRequirementsChecker.Flags":"isFavorite","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"dashboard","SmallIcon":"images\/ci\/RemoveFromFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"dashboard"},"type":"ActionDef"},{"ID":"ci.issue.field.attachment.view","properties":{"ShortDescription":"ActionDef.ci.issue.field.attachment.view.ShortDescription","Name":"Open Attachment","HandlerCallback":"onViewAttachmentAction","RequirementsCheckerClass":"mks.ci.AttachmentRequirementsChecker","RequiresInput":"false","SimpleRequirementsChecker.ObjectType":"attachment","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.issues","properties":{"Name":"Items","CommandToken":"ci.Issues","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Items16.png","MRUKey":"ci.query","StartType":"Exit"},"type":"ActionDef"},{"ID":"tm.markasother","properties":{"Name":"Mark as ...","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isEdit","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/Skipped.png","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"view.refresh","properties":{"Name":"Refresh View","HandlerCallback":"onRefreshAction","AcceleratorKey":"F5","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","SmallIcon":"images\/ci\/Refresh16.png"},"type":"ActionDef"},{"ID":"ci.copyreport","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.CopyReport","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIReport","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Copy Report","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"report","SmallIcon":"images\/ci\/Copy16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.issue.field.relationship.moveup","properties":{"Name":"Move Related Item Up","ShortDescription":"Move the related item up in order","HandlerCallback":"onMoveUpAction","RequirementsCheckerClass":"mks.ci.SingleSelectionMoveUpDownChecker","RequiresInput":"false"},"type":"ActionDef"},{"ID":"ci.attachmentview","properties":{"CommandToken":"ci.AttachmentView"},"type":"ActionDef"},{"ID":"ci.runchartview.scaledown","properties":{"Name":"Decrease Size","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunChartsView$ViewActionHandler","SmallIcon":"images\/ci\/DecreaseImage16.png"},"type":"ActionDef"},{"ID":"ci.showreport","properties":{"Name":"Add Report To Favorites","RequirementsCheckerClass":"mks.ci.SharedObjectRequirementsChecker","SimpleRequirementsChecker.Flags":"!isFavorite","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"report","SmallIcon":"images\/ci\/AddToFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"report"},"type":"ActionDef"},{"ID":"ci.runchartview.zoomin","properties":{"Name":"Zoom In","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunChartsView$ViewActionHandler","SmallIcon":"images\/ci\/ZoomIn16.png"},"type":"ActionDef"},{"ID":"ci.relationships.moveup","properties":{"Name":"Move Related Item Up","RequirementsCheckerClass":"mks.ci.RelationshipNodeRequirementsChecker","SimpleRequirementsChecker.Flags":"!isHistoric,!isRootNode,isIssueNode","HandlerClass":"mks.ic.ci.ui.web.RelationshipsView$ViewActionHandler","SimpleRequirementsChecker.ObjectType":"node","SmallIcon":"images\/ci\/MoveItemUp16Web.png","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.rundashboardview","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.RunDashboardsView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIDashboard","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Run Dashboard","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SimpleRequirementsChecker.ObjectType":"dashboard","SmallIcon":"images\/ci\/Run16.png","MRUKey":"ci.dashboard"},"type":"ActionDef"},{"ID":"ci.issueview","properties":{"Name":"View Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$ViewIssuePlugin","CommandToken":"ci.Issues","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","SmallIcon":"images\/ci\/View16.png","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1","MRUKey":"ci.issue","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.issue.field.relationship.movedown","properties":{"Name":"Move Related Item Down","ShortDescription":"Move the related item down in order","HandlerCallback":"onMoveDownAction","RequirementsCheckerClass":"mks.ci.SingleSelectionMoveUpDownChecker","RequiresInput":"false"},"type":"ActionDef"},{"ID":"ci.addrelatedissue","properties":{"PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$AddRelatedIssuePlugin","CommandToken":"ci.AddRelatedIssue","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","SimpleRequirementsChecker.Cardinality":"1","Name":"Add Related Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","SimpleRequirementsChecker.Flags":"!isHistoric","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","MRUKey":"ci.issue","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.editquickquery","properties":{"Name":"Edit Quick Query","PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$EditQuickQueryPlugin","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$EditQuickQueryPlugin","CommandToken":"ci.EditQuery","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SmallIcon":"images\/ci\/EditQuickQuery16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.deletereport","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.DeleteReport","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIReport","SimpleRequirementsChecker.Cardinality":"1+","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Delete Report","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"report","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.viewquery","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.ViewQuery","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIQuery","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"View Query Definition","PluggableSelectionProvider.MethodName":"addElement","SimpleRequirementsChecker.Flags":"!isVirtual","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SimpleRequirementsChecker.ObjectType":"query","SmallIcon":"images\/ci\/View16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"tm.markaspassed","properties":{"Name":"Mark as Passed","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isEdit","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/verdictTypePassed.gif","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.deletequery","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.DeleteQuery","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIQuery","SimpleRequirementsChecker.Cardinality":"1+","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Delete Query","PluggableSelectionProvider.MethodName":"addElement","SimpleRequirementsChecker.Flags":"!isVirtual,!isQuickQuery","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"query","StartType":"Wait"},"type":"ActionDef"},{"ID":"tm.batchedit","properties":{"Name":"Batch Edit Results","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isEdit","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/EditIssue16.png","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.runchartview.print","properties":{"Name":"Print Chart","Target":"_blank","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunChartsView$ViewActionHandler","SmallIcon":"images\/ci\/Print16.png"},"type":"ActionDef"},{"ID":"ci.createrelatedissue","properties":{"PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$CreateIssuePlugin","CommandToken":"ci.CopyIssue","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","SimpleRequirementsChecker.Cardinality":"1+","Name":"Create Related Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","SimpleRequirementsChecker.Flags":"!isHistoric","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","MRUKey":"ci.issue","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.issue.field.relationship.editflags","properties":{"ShortDescription":"Add or remove the relationship flags on the item","Name":"Edit Relationship Flags","HandlerCallback":"onEditFlagsAction","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"tm.clearverdict","properties":{"Name":"Clear Verdict","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isEdit","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.createreport","properties":{"Name":"Create Report","CommandToken":"ci.CreateReport","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SmallIcon":"images\/ci\/CreateReport16Web.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.dashboards","properties":{"Name":"Dashboards","CommandToken":"ci.Dashboards","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Dashboards16.png","StartType":"Exit"},"type":"ActionDef"},{"ID":"tm.reverttestresult","properties":{"Name":"Revert Result","RequirementsCheckerClass":"mks.tm.DirtyTestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isAddRelated","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.issue.field.attachment.add","properties":{"Name":"Add Attachment","ShortDescription":"Add an attachment","RequiresInput":"true"},"type":"ActionDef"},{"ID":"common.invokemru","properties":{"Name":"ActionDef.common.invokemru.Name","HandlerClass":"mks.ic.common.ui.web.SadWebConcreteView$MRUInteractor"},"type":"ActionDef"},{"ID":"ci.issues.editquery","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.EditQuery","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIQuery","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Edit Query","PluggableSelectionProvider.MethodName":"addElement","SimpleRequirementsChecker.Flags":"!isVirtual","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"query","SmallIcon":"images\/ci\/EditQuery16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.exportissues","properties":{"Name":"Export Items to Excel","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$ExportIssuesPlugin","CommandToken":"ci.ExportIssues","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Excel_Export.png","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+","StartType":"Return"},"type":"ActionDef"},{"ID":"ci.runhistoricalissuereport","properties":{"Name":"Run Report As Of","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$HistoricalReportIssuePlugin","CommandToken":"ci.RunReportView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+","StartType":"Return"},"type":"ActionDef"},{"ID":"ci.editissue","properties":{"PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$EditIssuePlugin","CommandToken":"ci.EditIssue","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","SimpleRequirementsChecker.Cardinality":"1+","Name":"Edit Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$EditIssuePlugin","SimpleRequirementsChecker.Flags":"!isHistoric","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/EditIssue16.png","MRUKey":"ci.issue","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.deletedashboard","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.DeleteDashboard","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIDashboard","SimpleRequirementsChecker.Cardinality":"1+","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Delete Dashboard","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"dashboard","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.runchartview.zoomout","properties":{"Name":"Zoom Out","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunChartsView$ViewActionHandler","SmallIcon":"images\/ci\/ZoomOut16.png"},"type":"ActionDef"},{"ID":"ci.copyissue","properties":{"PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$CreateIssuePlugin","CommandToken":"ci.CopyIssue","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","SimpleRequirementsChecker.Cardinality":"1","Name":"Copy Item","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/Copy16.png","MRUKey":"ci.issue","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.relationships.movedown","properties":{"Name":"Move Related Item Down","RequirementsCheckerClass":"mks.ci.RelationshipNodeRequirementsChecker","SimpleRequirementsChecker.Flags":"!isHistoric,!isRootNode,isIssueNode","HandlerClass":"mks.ic.ci.ui.web.RelationshipsView$ViewActionHandler","SimpleRequirementsChecker.ObjectType":"node","SmallIcon":"images\/ci\/MoveItemDown16Web.png","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"tm.createrelateditem","properties":{"Name":"Create Related Item","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isAddRelated","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$CreateRelatedItemInteractor","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/CreateTRRelatedItem16.png","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.gotoissue","properties":{"ShortDescription":"View the item matching the ID","Name":"Go To Item","CommandToken":"ci.Issues","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","MRUKey":"ci.issue","StartType":"Exit"},"type":"ActionDef"},{"ID":"tm.savetestresult","properties":{"Name":"Save Result","RequirementsCheckerClass":"mks.tm.DirtyTestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isAddRelated","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.showdashboard","properties":{"Name":"Add Dashboard To Favorites","RequirementsCheckerClass":"mks.ci.SharedObjectRequirementsChecker","SimpleRequirementsChecker.Flags":"!isFavorite","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"dashboard","SmallIcon":"images\/ci\/AddToFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"dashboard"},"type":"ActionDef"},{"ID":"ci.showquery","properties":{"Name":"Add Query To Favorites","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","SimpleRequirementsChecker.Flags":"!isFavorite,!isVirtual,!isQuickQuery","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"query","SmallIcon":"images\/ci\/AddToFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"query"},"type":"ActionDef"},{"ID":"common.changemksdomainuserpassword","properties":{"Name":"Change Password","CommandToken":"common.ChangeMKSDomainUserPassword","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.queries","properties":{"Name":"Queries","CommandToken":"ci.Queries","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Queries16.png","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.rerunquery","properties":{"Name":"Re-Run Query","HandlerCallback":"onReRunQueryAction","SmallIcon":"images\/ci\/Run16.png"},"type":"ActionDef"},{"ID":"si.createcp","properties":{"Name":"Create Change Package","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$CreateCPPlugin","PluggableInteractor.AfterCommandProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$CreateCPPlugin","CommandToken":"si.CreateCP","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","SimpleRequirementsChecker.Flags":"!isHistoric","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.runchartview.scaleup","properties":{"Name":"Increase Size","RequirementsCheckerClass":"mks.frame.DialogRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RunChartsView$ViewActionHandler","SmallIcon":"images\/ci\/IncreaseImage16.png"},"type":"ActionDef"},{"ID":"ci.charts","properties":{"Name":"Charts","CommandToken":"ci.Charts","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Charts16.png","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.issue.field.attachment.remove","properties":{"ShortDescription":"Remove the attachment(s)","Name":"Remove Attachment","HandlerCallback":"onRemoveAttachmentAction","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","RequiresInput":"false","SimpleRequirementsChecker.ObjectType":"attachment","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.issue.field.relationship.add","properties":{"Name":"Add Related Item","ShortDescription":"Add a related item","HandlerCallback":"onAddRelatedIssuesAction","RequirementsCheckerClass":"mks.ci.SingleValueRelationshipFieldChecker","RequiresInput":"true"},"type":"ActionDef"},{"ID":"common.exit","properties":{"ShortDescription":"Logout of the application","Name":"Logout","CommandToken":"common.Exit","HandlerClass":"mks.ic.common.ui.web.SadWebConcreteView$LogoutInteractor"},"type":"ActionDef"},{"ID":"tm.cleartestresult","properties":{"Name":"Clear Result","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isClear","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"tm.addattachment","properties":{"Name":"Add Attachment","RequirementsCheckerClass":"mks.tm.TestResultRequirementsChecker","SimpleRequirementsChecker.Flags":"isEdit","HandlerClass":"mks.ic.ci.ui.web.TestResultEditorView$TREActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SmallIcon":"images\/ci\/AddTRAttachment16.png","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.runquery","properties":{"Name":"Run Query","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$RunQueryPlugin","CommandToken":"ci.Issues","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Run16.png","SimpleRequirementsChecker.ObjectType":"query","SimpleRequirementsChecker.Cardinality":"1","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.relationships.refreshissue","properties":{"Name":"Refresh Item","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.ci.ui.web.RelationshipsView$ViewActionHandler","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.hidereport","properties":{"Name":"Remove Report From Favorites","RequirementsCheckerClass":"mks.ci.SharedObjectRequirementsChecker","SimpleRequirementsChecker.Flags":"isFavorite","HandlerClass":"mks.ic.ci.ui.web.FavoritesHandler","SimpleRequirementsChecker.ObjectType":"report","SmallIcon":"images\/ci\/RemoveFromFavorites.gif","SimpleRequirementsChecker.Cardinality":"1+","FavoritesHandler.FavoritesType":"report"},"type":"ActionDef"},{"ID":"view.bookmark","properties":{"Name":"Bookmark View","HandlerCallback":"onBookmarkAction"},"type":"ActionDef"},{"ID":"ci.issues.issueview","properties":{"Name":"View Item","HandlerCallback":"onIssueViewAction","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","SmallIcon":"images\/ci\/View16.png","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"},{"ID":"ci.runchartview","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.RunChartsView","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIChart","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Run Chart","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SimpleRequirementsChecker.ObjectType":"chart","SmallIcon":"images\/ci\/Run16.png","MRUKey":"ci.chart"},"type":"ActionDef"},{"ID":"ci.editquery","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.EditQuery","RequirementsCheckerClass":"mks.ci.QueryRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIQuery","SimpleRequirementsChecker.Cardinality":"1","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Edit Query","PluggableSelectionProvider.MethodName":"addElement","SimpleRequirementsChecker.Flags":"!isVirtual","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"query","SmallIcon":"images\/ci\/Edit16.png","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.relationships.removerelatedissues","properties":{"Name":"Remove Related Item","RequirementsCheckerClass":"mks.ci.RelationshipNodeRequirementsChecker","SimpleRequirementsChecker.Flags":"!isHistoric,!isRootNode,isIssueNode","HandlerClass":"mks.ic.ci.ui.web.RelationshipsView$ViewActionHandler","SimpleRequirementsChecker.ObjectType":"node","SmallIcon":"images\/ci\/RemoveRelatedIssue16Web.gif","SimpleRequirementsChecker.Cardinality":"1+"},"type":"ActionDef"},{"ID":"ci.deleteissuelabel","properties":{"Name":"Delete Item Label","ShortDescription":"ActionDef.ci.deleteissuelabel.ShortDescription","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$IssueLabelPlugin","CommandToken":"ci.DeleteLabel","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","RequiresInput":"true","SmallIcon":"images\/ci\/DeleteItemLabel.gif","SimpleRequirementsChecker.ObjectType":"label","SimpleRequirementsChecker.Cardinality":"1","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.addissuelabel","properties":{"Name":"Add Item Label","ShortDescription":"ActionDef.ci.addissuelabel.ShortDescription","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$IssueLabelPlugin","CommandToken":"ci.AddLabel","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","RequiresInput":"true","SmallIcon":"images\/ci\/AddItemLabel.gif","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.viewhistoricalissue","properties":{"Name":"View Item As Of","PluggableInteractor.SettingsProviderClass":"mks.ic.ci.ui.web.IssuesViewInteractorPlugins$ViewIssueAsOfPlugin","CommandToken":"ci.Issues","RequirementsCheckerClass":"mks.ci.IssueRequirementsChecker","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","PluggableInteractor.SelectionProviderClass":"mks.ic.ci.ui.web.IssueActionHelper","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"issue","SimpleRequirementsChecker.Cardinality":"1","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.reports","properties":{"Name":"Reports","CommandToken":"ci.Reports","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","SmallIcon":"images\/ci\/Reports16.png","StartType":"Exit"},"type":"ActionDef"},{"ID":"ci.preferences","properties":{"Name":"My Profile","ShortDescription":"View and edit preferences","CommandToken":"ci.PrefsAndNotificationView","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.deletechart","properties":{"PluggableSelectionProvider.MethodParameterClass":"mks.ci.api.CIShared","CommandToken":"ci.DeleteChart","RequirementsCheckerClass":"mks.frame.SimpleRequirementsChecker","PluggableSelectionProvider.ObjectClass":"mks.ci.api.CIChart","SimpleRequirementsChecker.Cardinality":"1+","PluggableSelectionProvider.SelectionClass":"mks.ic.ci.model.CISharedExplicitListSelection","Name":"Delete Chart","PluggableSelectionProvider.MethodName":"addElement","PluggableInteractor.SelectionProviderClass":"mks.ic.common.ui.PluggableSelectionProvider","HandlerClass":"mks.ic.common.ui.web.PluggableInteractor","RequiresInput":"true","SimpleRequirementsChecker.ObjectType":"chart","StartType":"Wait"},"type":"ActionDef"},{"ID":"ci.relationships.addrelatedissues","properties":{"Name":"Add Related Item","RequirementsCheckerClass":"mks.ci.RelationshipNodeRequirementsChecker","SimpleRequirementsChecker.Flags":"!isHistoric,!isRootNode","HandlerClass":"mks.ic.ci.ui.web.RelationshipsView$ViewActionHandler","SimpleRequirementsChecker.ObjectType":"node","SmallIcon":"images\/ci\/AddRelatedIssue16Web.gif","SimpleRequirementsChecker.Cardinality":"1"},"type":"ActionDef"}],"uis":[{"ID":"ci.titlepane","properties":{"Name":"UIDef.ci.titlepane.Name","UIClass":"mks.ci.TitlePane","TitlePane.AllowTimeEntries":"true","TitlePane.BackgroundColor":"rgb(211, 221, 233)","TitlePane.BackgroundImage":"images\/MKS_Logo_large.jpg"},"type":"UIDef"},{"ID":"common.menu.separator","properties":{"Name":"UIDef.common.menu.separator.Name","UIClass":"mks.frame.Menu.Separator"},"type":"UIDef"},{"items":[{"ID":"ci.viewhistoricalissue","type":"ActionDef"},{"ID":"ci.runhistoricalissuereport","type":"ActionDef"}],"ID":"ci.historical.menu","properties":{"Name":"Historical","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"tm.testresulteditor","type":"ActionDef"},{"ID":"tm.viewuntestedtestcases","type":"ActionDef"},{"ID":"ci.createsessionfrom","type":"ActionDef"},{"ID":"ci.substituteparams","type":"ActionDef"}],"ID":"ci.test.menu.issue","properties":{"Name":"Test","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"tm.testresulteditor","type":"ActionDef"},{"ID":"tm.viewuntestedtestcases","type":"ActionDef"}],"ID":"ci.test.menu.issue.context","properties":{"Name":"Test","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"tm.testresulteditor","type":"ActionDef"},{"ID":"tm.viewuntestedtestcases","type":"ActionDef"},{"ID":"ci.createsessionfrom","type":"ActionDef"}],"ID":"ci.test.menu.relationship","properties":{"Name":"Test","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.issues.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.addrelatedissue","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"ci.exportissues","type":"ActionDef"},{"ID":"ci.runissuereport","type":"ActionDef"},{"ID":"ci.runissuedifferencesreport","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.query.menu","type":"UIDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.historical.menu","type":"UIDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"si.createcp","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.test.menu.issue","type":"UIDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.query.mru.menu","type":"UIDef"},{"ID":"ci.issue.mru.menu","type":"UIDef"}],"ID":"ci.issues.menu","properties":{"Name":"UIDef.ci.issues.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.issues.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.addrelatedissue","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"ci.exportissues","type":"ActionDef"},{"ID":"ci.runissuereport","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.test.menu.issue.context","type":"UIDef"}],"ID":"ci.issues.menu.context","properties":{"Name":"UIDef.ci.issues.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.addrelatedissue","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.test.menu.issue.context","type":"UIDef"}],"ID":"ci.issueview.menu.context","properties":{"Name":"UIDef.ci.issueview.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issueview","type":"ActionDef"},{"ID":"ci.viewhistoricalissue","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.addissuelabel","type":"ActionDef"},{"ID":"ci.moveissuelabel","type":"ActionDef"},{"ID":"ci.deleteissuelabel","type":"ActionDef"}],"ID":"ci.issuelabel.menu.context","properties":{"Name":"UIDef.ci.issuelabel.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issueview","type":"ActionDef"},{"ID":"ci.viewhistoricalissue","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"}],"ID":"ci.issuebranch.menu.context","properties":{"Name":"UIDef.ci.issuebranch.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.viewcp","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.viewsicp","type":"ActionDef"}],"ID":"ci.issuecp.menu.context","properties":{"Name":"UIDef.ci.issuecp.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.rerunquery","type":"ActionDef"},{"ID":"ci.createquery","type":"ActionDef"},{"ID":"ci.copyquery","type":"ActionDef"},{"ID":"ci.deletequery","type":"ActionDef"},{"ID":"ci.editquery","type":"ActionDef"},{"ID":"ci.editquickquery","type":"ActionDef"},{"ID":"ci.viewquery","type":"ActionDef"},{"ID":"ci.showquery","type":"ActionDef"},{"ID":"ci.hidequery","type":"ActionDef"}],"ID":"ci.query.menu","properties":{"Name":"Query","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runquery","type":"ActionDef"},{"ID":"ci.createquery","type":"ActionDef"},{"ID":"ci.copyquery","type":"ActionDef"},{"ID":"ci.deletequery","type":"ActionDef"},{"ID":"ci.editquery","type":"ActionDef"},{"ID":"ci.viewquery","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showquery","type":"ActionDef"},{"ID":"ci.hidequery","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.query.mru.menu","type":"UIDef"}],"ID":"ci.queries.menu","properties":{"Name":"UIDef.ci.queries.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runquery","type":"ActionDef"},{"ID":"ci.createquery","type":"ActionDef"},{"ID":"ci.copyquery","type":"ActionDef"},{"ID":"ci.deletequery","type":"ActionDef"},{"ID":"ci.editquery","type":"ActionDef"},{"ID":"ci.viewquery","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showquery","type":"ActionDef"},{"ID":"ci.hidequery","type":"ActionDef"}],"ID":"ci.queries.menu.context","properties":{"Name":"UIDef.ci.queries.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runreportview","type":"ActionDef"},{"ID":"ci.createreport","type":"ActionDef"},{"ID":"ci.copyreport","type":"ActionDef"},{"ID":"ci.deletereport","type":"ActionDef"},{"ID":"ci.editreport","type":"ActionDef"},{"ID":"ci.reportview","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showreport","type":"ActionDef"},{"ID":"ci.hidereport","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.report.mru.menu","type":"UIDef"}],"ID":"ci.reports.menu","properties":{"Name":"UIDef.ci.reports.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runreportview","type":"ActionDef"},{"ID":"ci.createreport","type":"ActionDef"},{"ID":"ci.copyreport","type":"ActionDef"},{"ID":"ci.deletereport","type":"ActionDef"},{"ID":"ci.editreport","type":"ActionDef"},{"ID":"ci.reportview","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showreport","type":"ActionDef"},{"ID":"ci.hidereport","type":"ActionDef"}],"ID":"ci.reports.menu.context","properties":{"Name":"UIDef.ci.reports.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runchartview","type":"ActionDef"},{"ID":"ci.deletechart","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showchart","type":"ActionDef"},{"ID":"ci.hidechart","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.chart.mru.menu","type":"UIDef"}],"ID":"ci.charts.menu","properties":{"Name":"UIDef.ci.charts.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runchartview","type":"ActionDef"},{"ID":"ci.deletechart","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showchart","type":"ActionDef"},{"ID":"ci.hidechart","type":"ActionDef"}],"ID":"ci.charts.menu.context","properties":{"Name":"UIDef.ci.charts.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.runchartview.rerun","type":"ActionDef"},{"ID":"ci.runchartview.print","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.runchartview.zoomin","type":"ActionDef"},{"ID":"ci.runchartview.zoomout","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.runchartview.scaleup","type":"ActionDef"},{"ID":"ci.runchartview.scaledown","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showchart","type":"ActionDef"},{"ID":"ci.hidechart","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.chart.mru.menu","type":"UIDef"}],"ID":"ci.runchartview.menu","properties":{"Name":"UIDef.ci.runchartview.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.rundashboardview","type":"ActionDef"},{"ID":"ci.deletedashboard","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showdashboard","type":"ActionDef"},{"ID":"ci.hidedashboard","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.dashboard.mru.menu","type":"UIDef"}],"ID":"ci.dashboards.menu","properties":{"Name":"UIDef.ci.dashboards.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.rundashboardview","type":"ActionDef"},{"ID":"ci.deletedashboard","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showdashboard","type":"ActionDef"},{"ID":"ci.hidedashboard","type":"ActionDef"}],"ID":"ci.dashboards.menu.context","properties":{"Name":"UIDef.ci.dashboards.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.rundashboardview.rerun","type":"ActionDef"},{"ID":"ci.rundashboardview.print","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.showdashboard","type":"ActionDef"},{"ID":"ci.hidedashboard","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.dashboard.mru.menu","type":"UIDef"}],"ID":"ci.rundashboardview.menu","properties":{"Name":"UIDef.ci.rundashboardview.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.relationships.addrelatedissues","type":"ActionDef"},{"ID":"ci.relationships.removerelatedissues","type":"ActionDef"},{"ID":"ci.relationships.moveup","type":"ActionDef"},{"ID":"ci.relationships.movedown","type":"ActionDef"},{"ID":"ci.exportissues","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.relationships.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"ci.runissuereport","type":"ActionDef"},{"ID":"ci.runissuedifferencesreport","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.historical.menu","type":"UIDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"si.createcp","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.test.menu.relationship","type":"UIDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"}],"ID":"ci.relationships.menu","properties":{"Name":"UIDef.ci.relationships.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.relationships.addrelatedissues","type":"ActionDef"},{"ID":"ci.relationships.removerelatedissues","type":"ActionDef"},{"ID":"ci.relationships.moveup","type":"ActionDef"},{"ID":"ci.relationships.movedown","type":"ActionDef"},{"ID":"ci.exportissues","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.relationships.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"ci.test.menu.issue.context","type":"UIDef"}],"ID":"ci.relationships.menu.context","properties":{"Name":"UIDef.ci.relationships.menu.context.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issue.field.relationship.add","type":"ActionDef"},{"ID":"ci.issue.field.relationship.remove","type":"ActionDef"},{"ID":"ci.issue.field.relationship.create","type":"ActionDef"},{"ID":"ci.issue.field.relationship.editflags","type":"ActionDef"},{"ID":"ci.issue.field.relationship.moveup","type":"ActionDef"},{"ID":"ci.issue.field.relationship.movedown","type":"ActionDef"}],"ID":"ci.issue.field.relationship.menu.context.edit","properties":{"Name":"UIDef.ci.issue.field.relationship.menu.context.edit.Name","UIClass":"mks.ci.RelationshipFieldComponent.ContextMenu"},"type":"UIDef"},{"items":[{"ID":"ci.issue.field.relationship.add","type":"ActionDef"},{"ID":"ci.issue.field.relationship.remove","type":"ActionDef"},{"ID":"ci.issue.field.relationship.editflags","type":"ActionDef"},{"ID":"ci.issue.field.relationship.moveup","type":"ActionDef"},{"ID":"ci.issue.field.relationship.movedown","type":"ActionDef"}],"ID":"ci.issue.field.relationship.menu.context.edit.batch","properties":{"Name":"UIDef.ci.issue.field.relationship.menu.context.edit.batch.Name","UIClass":"mks.ci.RelationshipFieldComponent.ContextMenu"},"type":"UIDef"},{"items":[{"ID":"ci.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.issue.field.relationship.create","type":"ActionDef"},{"ID":"ci.exportissues","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"}],"ID":"ci.issue.field.relationship.menu.context.view","properties":{"Name":"UIDef.ci.issue.field.relationship.menu.context.view.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issue.field.attachment.view","type":"ActionDef"},{"ID":"ci.issue.field.attachment.remove","type":"ActionDef"}],"ID":"ci.issue.field.attachment.menu.context.edit","properties":{"Name":"UIDef.ci.issue.field.attachment.menu.context.edit.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issue.field.attachment.view","type":"ActionDef"}],"ID":"ci.issue.field.attachment.menu.context.view","properties":{"Name":"UIDef.ci.issue.field.attachment.menu.context.view.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issueview","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"tm.markaspassed","type":"ActionDef"},{"ID":"tm.markasfailed","type":"ActionDef"},{"ID":"tm.clearverdict","type":"ActionDef"},{"ID":"tm.markasother","type":"ActionDef"},{"ID":"tm.batchedit","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"tm.addrelateditem","type":"ActionDef"},{"ID":"tm.createrelateditem","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"tm.cleartestresult","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"tm.savetestresult","type":"ActionDef"},{"ID":"tm.reverttestresult","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"tm.refreshview","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.menu.separator","type":"UIDef"},{"ID":"tm.configviewoptions","type":"ActionDef"}],"ID":"tm.testresulteditorview.menu","properties":{"Name":"UIDef.tm.testresulteditorview.menu.Name","UIClass":"mks.frame.Menu"},"type":"UIDef"},{"items":[{"ID":"ci.issue.field.relationship.add","type":"ActionDef"},{"ID":"ci.issue.field.relationship.remove","type":"ActionDef"},{"ID":"ci.issue.field.relationship.create","type":"ActionDef"}],"ID":"tm.testresult.trrelationship.menu.context.edit","properties":{"Name":"UIDef.tm.testresult.trrelationship.menu.context.edit.Name","UIClass":"mks.ci.RelationshipFieldComponent.ContextMenu"},"type":"UIDef"},{"items":[{"ID":"ci.printissueview","type":"ActionDef"}],"ID":"tm.testresult.relationship.menu.context.view","properties":{"Name":"UIDef.tm.testresult.relationship.menu.context.view.Name","UIClass":"mks.ci.RelationshipFieldComponent.ContextMenu"},"type":"UIDef"},{"ID":"common.toolpane.separator","properties":{"Name":"UIDef.common.toolpane.separator.Name","UIClass":"mks.frame.ToolPane.Separator"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.issues.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.addrelatedissue","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"ci.runissuereport","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.rerunquery","type":"ActionDef"},{"ID":"ci.createquery","type":"ActionDef"},{"ID":"ci.copyquery","type":"ActionDef"},{"ID":"ci.deletequery","type":"ActionDef"},{"ID":"ci.issues.editquery","type":"ActionDef"},{"ID":"ci.editquickquery","type":"ActionDef"},{"ID":"ci.viewquery","type":"ActionDef"},{"ID":"ci.showquery","type":"ActionDef"},{"ID":"ci.hidequery","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.testresulteditor","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.query.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.issue.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.issues.toolpane","properties":{"Name":"UIDef.ci.issues.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.issues.menu","ToolPane.ItemsWithIcons":"ci.createissue,ci.issues.issueview,ci.editissue,ci.copyissue,ci.printissueview,ci.relationships,ci.rerunquery,ci.issues.editquery,ci.editquickquery,ci.showquery,ci.hidequery,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.runquery","type":"ActionDef"},{"ID":"ci.createquery","type":"ActionDef"},{"ID":"ci.copyquery","type":"ActionDef"},{"ID":"ci.deletequery","type":"ActionDef"},{"ID":"ci.editquery","type":"ActionDef"},{"ID":"ci.viewquery","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.showquery","type":"ActionDef"},{"ID":"ci.hidequery","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.query.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.queries.toolpane","properties":{"Name":"UIDef.ci.queries.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.queries.menu","ToolPane.ItemsWithIcons":"ci.runquery,ci.createquery,ci.copyquery,ci.editquery,ci.viewquery,ci.showquery,ci.hidequery,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.runreportview","type":"ActionDef"},{"ID":"ci.createreport","type":"ActionDef"},{"ID":"ci.copyreport","type":"ActionDef"},{"ID":"ci.deletereport","type":"ActionDef"},{"ID":"ci.editreport","type":"ActionDef"},{"ID":"ci.reportview","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.showreport","type":"ActionDef"},{"ID":"ci.hidereport","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.report.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.reports.toolpane","properties":{"Name":"UIDef.ci.reports.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.reports.menu","ToolPane.ItemsWithIcons":"ci.runreportview,ci.createreport,ci.copyreport,ci.editreport,ci.reportview,ci.showreport,ci.hidereport,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.runchartview","type":"ActionDef"},{"ID":"ci.deletechart","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.showchart","type":"ActionDef"},{"ID":"ci.hidechart","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.chart.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.charts.toolpane","properties":{"Name":"UIDef.ci.charts.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.charts.menu","ToolPane.ItemsWithIcons":"ci.runchartview,ci.showchart,ci.hidechart,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.runchartview.rerun","type":"ActionDef"},{"ID":"ci.runchartview.print","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.runchartview.zoomin","type":"ActionDef"},{"ID":"ci.runchartview.zoomout","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.runchartview.scaleup","type":"ActionDef"},{"ID":"ci.runchartview.scaledown","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.showchart","type":"ActionDef"},{"ID":"ci.hidechart","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.chart.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.runchartview.toolpane","properties":{"Name":"UIDef.ci.runchartview.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.runchartview.menu","ToolPane.ItemsWithIcons":"ci.runchartview.rerun,ci.runchartview.print,ci.runchartview.zoomin,ci.runchartview.zoomout,ci.runchartview.scaleup,ci.runchartview.scaledown,ci.showchart,ci.hidechart,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.rundashboardview","type":"ActionDef"},{"ID":"ci.deletedashboard","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.showdashboard","type":"ActionDef"},{"ID":"ci.hidedashboard","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.dashboard.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.dashboards.toolpane","properties":{"Name":"UIDef.ci.dashboards.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.dashboards.menu","ToolPane.ItemsWithIcons":"ci.rundashboardview,ci.showdashboard,ci.hidedashboard,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.rundashboardview.rerun","type":"ActionDef"},{"ID":"ci.rundashboardview.print","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.showdashboard","type":"ActionDef"},{"ID":"ci.hidedashboard","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"ci.dashboard.mru.list","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"}],"ID":"ci.rundashboardview.toolpane","properties":{"Name":"UIDef.ci.rundashboardview.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.rundashboardview.menu","ToolPane.ItemsWithIcons":"ci.rundashboardview.rerun,ci.rundashboardview.print,ci.showdashboard,ci.hidedashboard,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.createissue","type":"ActionDef"},{"ID":"ci.issueview","type":"ActionDef"},{"ID":"ci.editissue","type":"ActionDef"},{"ID":"ci.copyissue","type":"ActionDef"},{"ID":"ci.createrelatedissue","type":"ActionDef"},{"ID":"ci.relationships.addrelatedissues","type":"ActionDef"},{"ID":"ci.relationships.removerelatedissues","type":"ActionDef"},{"ID":"ci.relationships.moveup","type":"ActionDef"},{"ID":"ci.relationships.movedown","type":"ActionDef"},{"ID":"ci.printissueview","type":"ActionDef"},{"ID":"ci.relationships.refreshissue","type":"ActionDef"},{"ID":"ci.relationships","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.testresulteditor","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"view.refresh","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"}],"ID":"ci.relationships.toolpane","properties":{"Name":"UIDef.ci.relationships.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"ci.relationships.menu","ToolPane.ItemsWithIcons":"ci.createissue,ci.issueview,ci.editissue,ci.copyissue,ci.relationships.addrelatedissues,ci.relationships.removerelatedissues,ci.relationships.moveup,ci.relationships.movedown,ci.printissueview,ci.relationships,view.refresh"},"type":"UIDef"},{"items":[{"ID":"ci.issueview","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.markaspassed","type":"ActionDef"},{"ID":"tm.markasfailed","type":"ActionDef"},{"ID":"tm.clearverdict","type":"ActionDef"},{"ID":"tm.markasother","type":"ActionDef"},{"ID":"tm.batchedit","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.addrelateditem","type":"ActionDef"},{"ID":"tm.createrelateditem","type":"ActionDef"},{"ID":"tm.addattachmentwidget","type":"UIDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.cleartestresult","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.savetestresult","type":"ActionDef"},{"ID":"tm.reverttestresult","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.refreshview","type":"ActionDef"},{"ID":"view.bookmark","type":"ActionDef"},{"ID":"common.toolpane.separator","type":"UIDef"},{"ID":"tm.configviewoptions","type":"ActionDef"}],"ID":"tm.testresulteditorview.toolpane","properties":{"Name":"UIDef.tm.testresulteditorview.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.Menu":"tm.testresulteditorview.menu","ToolPane.ItemsWithIcons":"tm.markaspassed,tm.markasfailed,tm.addattachmentwidget,tm.addrelateditem,tm.createrelateditem,tm.batchedit,tm.refreshview"},"type":"UIDef"},{"items":[{"ID":"ci.issues","type":"ActionDef"},{"ID":"ci.queries","type":"ActionDef"},{"ID":"ci.charts","type":"ActionDef"},{"ID":"ci.reports","type":"ActionDef"},{"ID":"ci.dashboards","type":"ActionDef"}],"ID":"ci.toolpane","properties":{"Name":"UIDef.ci.toolpane.Name","UIClass":"mks.frame.ToolPane","ToolPane.ItemsWithIcons":"ci.issues,ci.queries,ci.charts,ci.reports,ci.dashboards","ToolPane.Label":"Quick Views"},"type":"UIDef"},{"ID":"ci.chart.mru.list","properties":{"Name":"Recently Run Charts","UIClass":"mks.frame.MRUList","MRUKey":"ci.chart"},"type":"UIDef"},{"ID":"ci.chart.mru.menu","properties":{"Name":"Recently Run Charts","UIClass":"mks.frame.MRUMenu","MRUKey":"ci.chart"},"type":"UIDef"},{"ID":"ci.report.mru.list","properties":{"Name":"Recently Run Reports","UIClass":"mks.frame.MRUList","MRUKey":"ci.report"},"type":"UIDef"},{"ID":"ci.report.mru.menu","properties":{"Name":"Recently Run Reports","UIClass":"mks.frame.MRUMenu","MRUKey":"ci.report"},"type":"UIDef"},{"ID":"ci.dashboard.mru.list","properties":{"Name":"Recently Run Dashboards","UIClass":"mks.frame.MRUList","MRUKey":"ci.dashboard"},"type":"UIDef"},{"ID":"ci.dashboard.mru.menu","properties":{"Name":"Recently Run Dashboards","UIClass":"mks.frame.MRUMenu","MRUKey":"ci.dashboard"},"type":"UIDef"},{"ID":"ci.query.mru.list","properties":{"Name":"Recently Run Queries","UIClass":"mks.frame.MRUList","MRUKey":"ci.query"},"type":"UIDef"},{"ID":"ci.query.mru.menu","properties":{"Name":"Recently Run Queries","UIClass":"mks.frame.MRUMenu","MRUKey":"ci.query"},"type":"UIDef"},{"ID":"ci.issue.mru.list","properties":{"Name":"Recent Items","UIClass":"mks.frame.MRUList","MRUKey":"ci.issue"},"type":"UIDef"},{"ID":"ci.issue.mru.menu","properties":{"Name":"Recent Items","UIClass":"mks.frame.MRUMenu","MRUKey":"ci.issue"},"type":"UIDef"},{"ID":"tm.addattachmentwidget","properties":{"Name":"UIDef.tm.addattachmentwidget.Name","UIClass":"mks.tm.AddAttachmentComponent"},"type":"UIDef"}]};
+window.webAppPrefs = {"WebApplication:mks.ci.ItemSelectionDialog;dimensions":"800:600","WebApplication:mks.ci.IssueIDSelectionDialog;dimensions":"227:92","WebApplication:mks.ci.ViewLayout;maximized":"false","WebApplication:mks.ci.QueryView;dimensions":"550:400","WebApplication:mks.ci.CreateItemComponent;lastSelection":"12|<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/BlankTypeImageSpacer.gif' \/> WN Common Issue","WebApplication:mks.ci.WebTypeSetting;dimensions":"640:480","WebApplication:mks.ci.ConcurrentModificationErrorDialog;dimensions":"640:480","WebApplication:mks.ci.ViewLayout;splitterLeft":"233","WebApplication:mks.ci.EditIssueView;dimensions":"maximized"};
+window.initialParameters = {};
+window.initialWebDialog = {"serverMessage":null,"type":"View","helpURL":"\/resources\/help\/ic\/items\/issue_detail_view.html","concreteUI":{"restoreAction":"ci.issues","issueFilter":{"methods":["getState","setQuery","setPreloadData","getFilterResultInfo","enableSymbolicMeValue","setSortColumn","setViewFields","getAlgorithmProvider","setColumnDisplayOrder","removeFilters","enableUnspecifiedValue","setState","setModelProvider","setValueViaID","dataSetChanged","getModelProvider","setColumnVisibility","getResultsAt","applyFilterChanges","getResultAt","dispose","getFilterInfo","setNeedsNewPreloadData","setValue","getProperties","getResultRange","resetColumnsToDefault","setColumnWidth","updateFilter","getAllResults","getPreferenceKey","setInverse","getResultCount","saveColumnsAsDefault","setPreloadSizeHint","removeFilter","getCallableType"],"objectID":1094,"JSONRPCType":"CallableReference","javaClass":"mks.ic.ci.ui.web.CIAJAXFilter","properties":{"multipleLabel":"items","singleLabel":"item","info":{"activeFilterParameterLabels":[""],"columnSortAscending":false,"columnTypes":["integer","type","shorttext","state","user","project"],"resultCount":61,"canResetCurrentColumnSetToDefault":true,"columnIDs":["-5","-11","-10","-9","-7","-8"],"activeFilterParameters":[""],"columnVisibility":[true,true,true,true,true,true],"recentFilterInfo":[{"values":["phase1b"],"subject":["471","Free Text Field 2","shorttext"],"isPinned":false,"isInverse":false,"operator":[]},{"values":["phase1b"],"subject":["471","Free Text Field 2","shorttext"],"isPinned":false,"isInverse":false,"operator":[]},{"values":[["4674","<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)",""]],"subject":["-7","Assigned User","user"],"isPinned":false,"isInverse":false,"operator":[]},{"values":["phase1b"],"subject":["471","Free Text Field 2","shorttext"],"isPinned":false,"isInverse":false,"operator":[]},{"values":[["867","<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII",""]],"subject":["-8","Project","project"],"isPinned":false,"isInverse":false,"operator":[]},{"values":[["4674","<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)",""]],"subject":["-7","Assigned User","user"],"isPinned":false,"isInverse":false,"operator":[]},{"values":["1014838"],"subject":["-5","ID","integer"],"isPinned":false,"isInverse":false,"operator":["01","is equal to a number (==)",""]},{"values":["phase1b"],"subject":["471","Free Text Field 2","shorttext"],"isPinned":false,"isInverse":false,"operator":[]},{"values":[["867","<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII",""]],"subject":["-8","Project","project"],"isPinned":false,"isInverse":false,"operator":[]},{"values":["POSTPAID"],"subject":["-10","Summary","shorttext"],"isPinned":false,"isInverse":false,"operator":[]}],"canSaveCurrentColumnSetAsDefault":false,"mks_issue_index":[0],"enabledFilterNames":["ColumnBasedFieldFilter","FieldFilter","SaveAsNewQuery","PinAllFilters"],"columnDisplayOrder":null,"activeFilterDoForward":[true],"sortColumn":3,"sortColumnName":"State","activeFilterNames":["TextFilter"],"enableTextFilter":true,"columnNames":["ID","Type","Summary","State","Assigned User","Project"],"preloadedRows":[{"_FLAGS":0,"-10":"NDC ATM : BII Debit : Payment CC Amex USD was cancelled, Requested Currency Invalid.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1020163<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1020163","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: LSN DEBIT : PAYMENT CC BII &nbsp;was cancelled, system error","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1020092<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1020092","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM Maybank transfer key error during transfer inquiry.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1020087<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Zahner, Thomas (thomas.zahner.ext)","_ID":"1020087","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT PAM PALYJA transaction timeout (no response)","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1019585<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1019585","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC Test: CI : Payment CC selection not completed and wrong","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1019120<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"1019120","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT Airline Sriwijaya, host message format error.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1019101<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1019101","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT - Ticket - KAI, Opcode not configured -- Opcode is incorrect --","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1019092<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII UAT","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"1019092","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : LSN Debit : Payment Public Utility to PAM PALYJA","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014770<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1014770","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"Adjust project implementation for Exchange Rate UI","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014760<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Cui, Tainan (tainan.cui.ext)","_ID":"1014760","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit IDR : Payment Installment to KTA ANZ -- No payment Code for KTA ANZ--","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1012650<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII UAT","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"1012650","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : LSN Card : Payment to PBB","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1011629<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1011629","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : LSN Card : Payment to BSD Junction","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1011618<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Kurniawan, Andika (andika.kurniawan.ext)","_ID":"1011618","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit : PLN Prepaid; Customer ID","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1010832<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Zahner, Thomas (thomas.zahner.ext)","_ID":"1010832","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : LSN Card : Receipt Payment ","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1010506<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1010506","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit - Payment Installment PL Citibank, OPcode not found.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1010485<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Triwidodo, Darmawan (darmawan.triwidodo)","_ID":"1010485","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : LSN Card: Payment Installment to KTA SCB -- CI Issue Blocking All Installment Issue--","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1009892<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII UAT","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"1009892","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT PLN POSTPAID AJ screen was showing balance before denom with &quot;others&quot; choice.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1003551<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1003551","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC:BII RKK Account \u2013 TopUp \u2013 TopUp XL \u2013 OP Code didn&#39;t found in NDCFUNCTION table","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1002070<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Triwidodo, Darmawan (darmawan.triwidodo)","_ID":"1002070","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC:BII Debit Card \u2013 Transfer \u2013 Transfer to BII Account \u2013 End of User Session is missing in Journal","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1001669<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Wu, Mang (mang.wu)","_ID":"1001669","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM: BPR Link Card \u2013 Transfer \u2013 Transfer to BII Account \u2013 Reference number and amount is incorrect in receipt","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1001574<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1001574","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC:BII LSN Card \u2013 TopUp \u2013 TopUp SMARTFREN \u2013 Serial NBR is not included in receipt","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>996155<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"996155","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC Config manager","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>993306<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Lorenzmeier, Rainer (rainer.lorenzmeier)","_ID":"993306","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT Public Utility - PLN NON TAGLIST was cancelled, the transaction has been canceled by the host system.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>978566<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"978566","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC Config Manager creating duplicate sql statement","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>975831<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Core Development BD","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Lorenzmeier, Rainer (rainer.lorenzmeier)","_ID":"975831","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit : Payment CC HSBC","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>969067<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"969067","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT - Housing - BSD Junction was cancelled, system error.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>969064<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"969064","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit : Payment Public Utility Telkom Etc","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>968808<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"968808","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit : Payment KAI Ticket","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>968485<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"968485","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM:BII DEBIT: Topup IM3: Empty denomination send transaction request","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>958460<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"958460","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT BYRU was cancelled, Bill Reference Number Prefix Invalid.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>958459<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"958459","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT BYRU confirmation screen was wrong.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>958458<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Setyabudhi, Muhammad (taufiq.setyabudhi)","_ID":"958458","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC Test: Payment - FINPAY - WOM FINANCE was system error","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>957212<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"957212","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT VIRTUAL ACCOUNT was cancelled, Payment Not Found","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>955864<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Setyabudhi, Muhammad (taufiq.setyabudhi)","_ID":"955864","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT PLN POSTPAID AJ was cancelled, Payment Not Found","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>955831<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"955831","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit : Payment Installment BII Finance ","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>955184<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII UAT","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"955184","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM: Add PLN payments to the project supposed changes needed on BL and NDC CC","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>954342<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Zahner, Thomas (thomas.zahner.ext)","_ID":"954342","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"No opcode definition for transfer transactions with maybank card in FSD document and new atm ndc ci sheet","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>952309<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Zahner, Thomas (thomas.zahner.ext)","_ID":"952309","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"BII NDC CC Component updates","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>948326<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Zahner, Thomas (thomas.zahner.ext)","_ID":"948326","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"Server installation: duplicate values for the index key during populate the DB2 ","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>879951<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Lorenzmeier, Rainer (rainer.lorenzmeier)","_ID":"879951","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_64' \/> Working"},{"_FLAGS":0,"-10":"NDC ATM : LSN Debit : Payment Finpay to WOM Finance","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014889<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"1014889","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC ATM : BII DEBIT : &nbsp;PREPAID TOP UP Mentari","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014673<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"1014673","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC:LSN Debit Card \u2013 Transfer \u2013 Transfer to Other Bank \u2013 Bank and Name are incorrect in receipt","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1001638<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)","_ID":"1001638","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : TOP UP - StarOne - was cancelled, Check Pan Digit Algorithm Failed.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>978470<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"978470","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC:Maybank Card \u2013 Transfer \u2013 Transfer to same card \u2013 OP Code didn&#39;t found in NDCFUNCTION table","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>969420<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dong, Runyuan (runyuan.dong)","_ID":"969420","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC ATM: BII Debit: TopUp Transaction: No Transaction reply when choosing the cancel confirmation screen (&#39;No&#39; button)","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>969068<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"969068","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC Testing: LSN DEBIT - Payment - Zakat : BAZIS ZAKAT - ATM Timeout but journal producing was successful, offline authorization accept","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>957774<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)","_ID":"957774","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC Testing: Maybank Card - Payment - Express : Housing - Payment Not Found","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>956948<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"956948","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC TEST: LSN DEBIT - Payment for Television - FirstMedia was not working","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>955534<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"955534","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC Atm: BII BPR link : Topup XL not sent to ON2","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>953692<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"953692","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC ATM : LSN Debit : Payment Public Utility Telkom Etc","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>951750<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Kurniawan, Andika (andika.kurniawan.ext)","_ID":"951750","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"LSN Debit: Payment Credit Card (UOB) is failed &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>949072<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)","_ID":"949072","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC ATM : LSN Debit - Telkomsel postpaid Bill Payment Fail","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>948204<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"948204","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_67' \/> Solution in QA"},{"_FLAGS":0,"-10":"NDC ATM : LSN Debit : Payment Public Utility to PAM AETRA","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014826<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Dinal, Mochammad (mochammad.dinal)","_ID":"1014826","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"NDC ATM : LSN Debit Card : Payment to PLN Prepaid ","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014565<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"1014565","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"NDC TEST: BII DEBIT : PAYMENT CC CITIBANK was cancelled, Check Pan Digit Algorithm Failed.","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1014530<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"1014530","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"NDC ATM : BII Debit IDR : Payment Installment to KTA Citibank","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1012611<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Tonny, Sabirin (sabirin.tonny)","_ID":"1012611","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"NDC ATM : LSN Card : Payment Airlines - Lion air","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>1009753<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)","_ID":"1009753","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"Journal:Source account number is incorrect when do transfer to BPK Link with single IDR account card","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>980603<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Kurniawan, Andika (andika.kurniawan.ext)","_ID":"980603","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"NDC Testing: Maybank Card - Payment - Loan : Housing - Target Account Not Found","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>956918<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> _ext Inti, bankbii (bankbii.inti.ext)","_ID":"956918","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"},{"_FLAGS":0,"-10":"NDC Testing: Maybank Card - Payment - Utility: Water - Payment Not Found -- need new CI with additional opcode for Maybank Payment","-5":"<a href=\"javascript:void(0)\" class=\"issueLink\" title='View Item'>956894<\/a>","-11":"WN Common Issue","-8":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgProjectOpen.gif' \/> \/Customer\/BD\/ID\/BII","-7":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/imgUser.gif' \/> Kresno, Adhityo (adhityo.kresno)","_ID":"956894","-9":"<img style='vertical-align: middle; margin-bottom: 2px;' src='\/images\/ci\/custom\/mks_ci_api_CIState_84' \/> Inquiry"}],"columnWidths":[50,150,450,100,150,200]}}},"mks_historical_mode":false,"mks_relationship_mode":0,"mks_query_info":["42386","<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/Query16x16.gif' \/> <img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/notFavorite.gif' \/>  Phase1b Issues(NDC Topup,Transfer,Payment)","0"],"queryFilter":{"methods":["getState","setQuery","setPreloadData","getFilterResultInfo","enableSymbolicMeValue","setSortColumn","setViewFields","getAlgorithmProvider","setColumnDisplayOrder","removeFilters","enableUnspecifiedValue","setState","setModelProvider","setValueViaID","dataSetChanged","getModelProvider","setColumnVisibility","getResultsAt","applyFilterChanges","getResultAt","dispose","getFilterInfo","setNeedsNewPreloadData","setValue","getProperties","getResultRange","resetColumnsToDefault","setColumnWidth","updateFilter","getAllResults","getPreferenceKey","setInverse","getResultCount","saveColumnsAsDefault","setPreloadSizeHint","removeFilter","getCallableType"],"objectID":1449,"JSONRPCType":"CallableReference","javaClass":"mks.ic.ci.ui.web.CIAJAXFilter","properties":{"multipleLabel":"queries","singleLabel":"query","info":{"activeFilterParameterLabels":["productio"],"columnSortAscending":false,"columnTypes":[],"resultCount":1,"canResetCurrentColumnSetToDefault":false,"columnIDs":[],"activeFilterParameters":["productio"],"columnVisibility":null,"canSaveCurrentColumnSetAsDefault":false,"supportsPreferredWidth":false,"enabledFilterNames":["Favorite","Favorite","SystemProvided","CreatedByMe","CreatedBy","ModifiedInLastWeek","ModifiedOn"],"columnDisplayOrder":null,"activeFilterDoForward":[true],"sortColumn":-1,"sortColumnName":"","activeFilterNames":["TextFilter"],"columnNames":null,"preloadedRows":[{"_FLAGS":0,"_NAME":"<img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/Query16x16.gif' \/> <img style='vertical-align: middle; margin-bottom: 2px;' src='images\/ci\/notFavorite.gif' \/>  BII - Issues of production","_FIELD_TYPE":"","_ID":"50014"}],"columnWidths":null}}},"clientQueryListRefreshRequired":false,"restoreHistorySettings":{"relationshipMode":"none","query":"__id42386","currentIssueID":"1020163","relationshipDynamicItemKey":"false","mode":"list"},"restoreBookmarkSettings":{"query":"__id42386"},"mks_mode":0,"mks_issue_index":[0],"enablePinnedFilters":true,"dynamicItemParameter":false,"clientTableColumnRefreshRequiredParameter":false,"ID":"View:7302","clientTableRefreshRequiredParameter":true,"singleIssueViewMode":false,"viewID":"ci.issues"},"addToHistory":true,"title":"Items View [Phase1b Issues(NDC Topup,Transfer,Payment)]","parentID":null,"name":"IssuesView","ID":"Dialog:8308","context":{"orphan":false,"domainAppID":"ci","commandRunnerID":7044,"mruLists":{"ci.chart":[],"ci.report":[],"ci.issue":[{"actionID":"ci.issueview","label":"1014889 - NDC ATM : LSN Debit : Payment Finpay to WOM Finance"},{"actionID":"ci.issueview","label":"938846 - LSN Debit: ATM Transaction Bill Inquiry Failed - NullPointerException in PCEFCFlowContext.finishStep()"},{"actionID":"ci.issueview","label":"1014565 - NDC ATM : LSN Debit Card : Payment to PLN Prepaid "},{"actionID":"ci.issueview","label":"1014826 - NDC ATM : LSN Debit : Payment Public Utility to PAM AETRA"},{"actionID":"ci.issueview","label":"1019585 - NDC TEST: BII DEBIT : PAYMENT PAM PALYJA transaction timeout (no response)"},{"actionID":"ci.issueview","label":"956873 - NDC ATM : BII Debit Card : PAM Palyja"},{"actionID":"ci.issueview","label":"955816 - NDC TEST: BII DEBIT : Payment - PBB was cancelled, system error"},{"actionID":"ci.issueview","label":"1011629 - NDC ATM : LSN Card : Payment to PBB"},{"actionID":"ci.issueview","label":"1010832 - NDC ATM : BII Debit : PLN Prepaid; Customer ID"},{"actionID":"ci.issueview","label":"957212 - NDC Test: Payment - FINPAY - WOM FINANCE was system error"}],"ci.query":[{"actionID":"ci.issues","label":"Phase1b Issues(NDC Topup,Transfer,Payment)"},{"actionID":"ci.issues","label":"BII - Issues of production"},{"actionID":"ci.issues","label":"Phase 1b"},{"actionID":"ci.issues","label":"Quick Query"},{"actionID":"ci.issues","label":"BII - Go-Live Issues!!!"},{"actionID":"ci.issues","label":"Response Q"},{"actionID":"ci.issues","label":"All open items"},{"actionID":"ci.issues","label":"Action Items Overview"},{"actionID":"ci.issues","label":"Action Record Overview"},{"actionID":"ci.issues","label":"All WN Release Records"}],"ci.dashboard":[]}},"historySequenceID":0,"allowHistoryNavigation":true,"allowedActions":["getItemsAction","viewTestSession","setCurrentIssue","viewTestCase","runQuery","deleteTestResults","editTestResult","enablePinnedAction","createSessionFrom","saveFiltersAsQueryAction","OK","selectMode","setDynamicItem","viewTestResult","view.refresh","selectIssue","ci.rerunquery"]}; 
+window.mruLists = new Object();
+
+	
+qx.log.Logger.ROOT_LOGGER.setMinLevel(qx.log.Logger.LEVEL_OFF);
+qx.log.Logger.ROOT_LOGGER.removeAllAppenders();
+window.mksDebug = false;
+
+
+</script>
+
+
+<script type="text/javascript">
+
+
+
+initApp = function(){
+    try {
+        
+        qx.locale.Manager.getInstance().setLocale("de_US");
+        qx.io.Alias.getInstance().add("mks-resource", baseHref);
+        
+        
+        mks.frame.MessagePopup.initialize();
+        mks.frame.StatusPopup.initialize();
+        mks.ci.df.initializeSingletonDateChooserPopup();
+
+        // Initialize the Xinha component
+        mks.ci.XinhaBase.initialize("body { font-size: 10pt; font-family: arial, sans-serif; color: black; }table { font-size: 10pt; font-family: arial, sans-serif; color: black; }p { margin-top: 0pt; margin-left: 0pt; margin-bottom: .0001pt; margin-right: 0pt; }");
+        
+        mks.frame.HeartbeatManager.initialize(window.server, -1);
+        mks.frame.HeartbeatManager.start();
+
+        // Initialize the web application
+        mks.frame.WebApp.initialize(window.webAppDef, window.webAppPrefs, 
+            window.initialParameters);
+        document.title = "MKS Integrity 2009";
+
+        // Main page style
+        qx.ui.core.ClientDocument.getInstance().setBackgroundColor("#FFFFFF");
+
+        // Create the singleton filter popup component
+        window.singletonFilterPopup = mks.ci.df.SingletonFilterPopup();	
+
+        // Setup or SingletonTableManager
+        window.SingletonTableManager = mks.ci.df.SingletonTableManager();
+
+        // Initialize the dialog manager       
+        mks.frame.DialogManager.initialize(10);
+        
+        mks.frame.DialogManager.startStatus();
+        
+        // Complete initialization after all other work is done on this "thread"
+        qx.client.Timer.once(function() {
+            mks.frame.DialogManager._actionCallback(
+                [jsonrpc._handleCallableReference(window.initialWebDialog)], 
+                null, 10);
+        }, this, 0);
+
+        // instantiate the keyboard navigation helper if we're supposed to
+        if( mks.frame.Utils.getKBNavHelperEnabled() ){
+            window.mksKBNavHelper = mks.ci.df.KBNavHelper();
+        }
+        
+    } catch (ex) {
+        reportError(ex);
+    }
+};
+
+postInitApp = function() {
+    // Remove the "Loading..." thingy
+    document.getElementById("INITIAL_LOAD_MSG").style.display="none";  
+            
+    var eventHandler = qx.event.handler.EventHandler.getInstance();
+        
+    // Allow the browser's context menu - we override where necessary
+    eventHandler.setAllowClientContextMenu(true);
+
+    // Default handler for the context menu event that prevents the browser
+    // context menu if the event came from a menu itself.
+    qx.ui.core.ClientDocument.getInstance().addEventListener("contextmenu", 
+        function(e) {
+            // Allow the context menu unless the target resides in a menu
+            // or it is a javascript link (we don't want them to try and open
+            // the link - it won't work).
+            var t = e.getTarget();
+            var d = e.getDomTarget();
+            do {
+                if (t instanceof qx.ui.menu.Menu) {
+                    e.preventDefault();
+                    break;
+                    } else if (d && d.tagName && d.tagName == "A" && d.href &&
+                        qx.lang.String.startsWith(d.href, "javascript:")) {
+                        e.preventDefault();
+                        break;
+                    } else {
+                        t = t.getParent();
+                }
+            } while (t != null)
+    }, this);
+    
+    // If we debugging, provide a hook to the object info db using Ctrl+Alt+D
+    if (window.mksDebug) {
+        var cmd = new qx.client.Command("Ctrl+Alt+D");
+        cmd.setEnabled(true);
+        cmd.addEventListener("execute", function(e) {
+            qx.log.Logger.ROOT_LOGGER.debug("******** OBJECT SUMMARY START ********");
+            qx.log.Logger.ROOT_LOGGER.debug(qx.dev.ObjectSummary.getInfo());
+            qx.log.Logger.ROOT_LOGGER.debug("******** OBJECT SUMMARY END ********");
+        });
+    }
+};
+
+closeApp = function() {
+    // alert("Closing");
+};
+
+terminateApp = function() { 
+    try {
+        // logout so that the session is freed
+	mks.frame.DialogManager.logOut();
+    
+	//alert("Terminating");  
+        mks.frame.HeartbeatManager.stop(); 
+    
+        // Dispose the Xinha component
+        mks.ci.XinhaBase.dispose();
+
+    } catch( e ){
+        qx.log.Logger.ROOT_LOGGER.debug( "error during app termination: " + e );
+    }
+};
+
+/**
+ * Report any fatal errors
+ */
+function reportError(ex) {
+    var trace = null;
+
+    // Turn on debug logging now for the QA test framework
+    if (!window.mksDebug) {
+	// Set debugging enabled so that we don't keep appending loggers.
+	window.mksDebug = true;
+
+	// Check for an instrumented log appender, and if set, use it
+        var loggerClassName = qx.core.Setting.isSet("qx.mksLogAppender") ?
+            qx.core.Setting.get("qx.mksLogAppender") : null;
+
+        if (loggerClassName) {
+            qx.log.Logger.ROOT_LOGGER.setMinLevel(
+                qx.core.Setting.get("qx.minLogLevel"));
+            
+            qx.log.Logger.ROOT_LOGGER.addAppender(
+                new (qx.Class.getByName(loggerClassName)));
+        }
+    }
+        
+    var name = null;
+    if (ex.message) {
+        name = ex.message;
+    } else if (ex.name) {
+        name = ex.name;
+    } else {
+        name = ex;
+    }
+        
+    // Server side error handling
+    if (ex.javaStack) {
+        // A server side exception - probably reported in the server log, but 
+        // we'll capture it just to be safe
+        // Log the original exception
+        trace = "Exception caught (Server):\n" + 
+            name + (ex.code ? " (" + ex.code + ")" : "") + "\n" + ex.javaStack;
+    } 
+
+    // Client side error handling
+    var jsTrace = qx.dev.StackTrace.getStackTraceFromError(ex);
+    var stack = null;
+    if (jsTrace) {
+        stack = "";
+        for (var i = 0; i < jsTrace.length; i++) {
+            stack += jsTrace[i] + "\n";
+        }
+    }  
+
+    if (!trace) {
+        trace = "";
+    } else { 
+        trace += "\n";
+    }
+    
+    trace += "Exception caught (Client):\n" + 
+        name + (ex.code ? " (" + ex.code + ")" : "") + "\n" + 
+        (stack ? stack : "No trace available"); 
+
+    qx.log.Logger.ROOT_LOGGER.debug(trace);
+
+    // Is this a connection exception - no trace - just report it.
+    if (mks.frame.Utils.isConnectionException(ex)) {
+        name = mks.frame.getMessage("CONNECTION_FAILED");
+        trace = null;
+    } 
+
+    // Is this an authentication/session error - no trace - just report it.
+    if (ex.name) {
+        if (ex.name.indexOf("mks.frame.app.ui.web.AuthenticationException") == 0) { 
+            trace = null;
+        }
+    }
+    
+    mks.frame.DialogManager.reportFatalError(name, trace);
+}
+
+
+// Offline support
+window.offline = false;
+
+/**
+ * Take the application offline. When we discover a serious error,
+ * we report it to the user and prevent further interaction with the server 
+ * until they re-connect to a different session.
+ */
+function goOffline() {    
+    if (!window.isOffline()) {
+        qx.log.Logger.ROOT_LOGGER.debug("******** Going offline ********");
+        
+        window.offline = true;
+        
+        // Stop the heartbeat
+        mks.frame.HeartbeatManager.stop(); 
+    
+        // Don't allow further json calls
+        JSONRpcClient.goOffline();
+    }
+}
+
+/**
+ * @return true if the application is already offline
+ */
+function isOffline() {
+    return window.offline;
+}
+
+/**
+ * Source: http://www.outofhanwell.com/ieleak/index.php?title=Fixing_Leaks
+ *
+ * Sometimes Internet Explorer keeps items in memory after the page is done 
+ * using them. Although these pseudo-leaks are freed after the user leaves 
+ * the page, some web pages may be open for long periods of time.
+ *
+ * To avoid pseudo-leaks, do not use removeChild to remove elements. Instead, 
+ * set the parent's innerHTML to "" or use a function like this: 
+ */
+function discardElement(element) {
+    if ( !element ) return;
+    
+    var garbageBin = document.getElementById('IELeakGarbageBin');
+    garbageBin.appendChild(element);
+    garbageBin.innerHTML = '';
+}
+
+</script>
+
+<!-- Shims for our popup windows/dialogs -->
+<IFRAME id="POPUPSHIM" style="DISPLAY: none; LEFT: 0px; POSITION: absolute; TOP: 50px" src="javascript:false;" frameBorder="0" scrolling="no"></IFRAME>
+<IFRAME id="POPUPMENU1SHIM" style="DISPLAY: none; LEFT: 0px; POSITION: absolute; TOP: 50px" src="javascript:false;" frameBorder="0" scrolling="no"></IFRAME>
+<IFRAME id="POPUPMENU2SHIM" style="DISPLAY: none; LEFT: 0px; POSITION: absolute; TOP: 50px" src="javascript:false;" frameBorder="0" scrolling="no"></IFRAME>
+<IFRAME id="WINDOWSHIM" style="DISPLAY: none; LEFT: 0px; POSITION: absolute; TOP: 50px" src="javascript:false;" frameBorder="0" scrolling="no"></IFRAME>
+
+<!--  An invisible element used to calculate text sizes -->
+<div id="TEXT_SIZER" style="LEFT: -1000px; POSITION: absolute; TOP: -1000px; font-family: 'Lucida Grande',Tahoma,Verdana,'Liberation Sans','Bitstream Vera Sans'; font-size: 11px; margin: 0; padding-left: 2px; overflow:hidden; white-space: nowrap;" src="javascript:false;" frameBorder="0" scrolling="no">
+	<img id="TEXT_SPACER" src="images/ci/BlankTypeImageSpacer.gif" style="vertical-align: middle; margin-bottom: 2px;">
+</div>
+
+<!-- An invisible element for storing DOM garbage to be properly cleaned -->
+<div id="IELeakGarbageBin" style="DISPLAY: none;"></div>
+
+<!--  We use this form to submit JSON requests when we don't want to use RPC -->
+<FORM id="ACTIONFORM" method="POST" target="_blank">
+<INPUT type="hidden" name="mks.json" value="">
+</FORM>
+
+</body>
+</html>
+

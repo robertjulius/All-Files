@@ -1,0 +1,18 @@
+<html>
+  <head>
+  </head>
+  <body bgcolor="red">
+      <table>
+	    <tr>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		  <td>Left Frame</td>
+		<tr>
+      </table>
+  </body>
+</html>

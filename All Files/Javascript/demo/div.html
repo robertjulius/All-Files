@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<script src="jquery-1.8.3.min.js"></script>
+<script>
+	
+	window.onload = function() {
+	    fitContent($('iframe#topFrame'));
+		adjustSize();
+	  };
+	
+	function fitContent(iFrame) {
+    	  iFrame.height(iFrame.contents().height());
+	      iFrame.width(iFrame.contents().width());
+		}
+		
+	function adjustSize() {		
+	    //var width=$(window).width();
+        //var height=$(window).height();
+	  
+		//$('#menu').css("top", $('iframe#topFrame').height());
+		//$('#menu').css("height", height - $('iframe#topFrame').height());
+		//$('#menu').height(height - $('iframe#topFrame').height());
+	  }
+	
+</script>
+
+<style>
+
+iframe#topFrame { 
+          position:fixed;
+		  height:100%;
+		  width:100%;
+		  border:none;
+		  border-size=0px;
+        }
+	
+	iframe#leftFrame { 
+          position:fixed;
+		  border:none;
+		  border-size=0px;
+        }
+</style>
+
+</head>
+
+<body>
+	
+	<iframe id="topFrame" scrolling="no" src="topFrame.html" name="topFrame"></iframe>
+
+	<div id="menu" style="float:left;">
+		
+	</div>
+
+	<div id="content" style="float:left;">
+		
+	</div>
+
+	<div id="footer" style="text-align:center;">
+	</div>
+ 
+</body>
+</html>
