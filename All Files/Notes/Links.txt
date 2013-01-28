@@ -1,0 +1,2 @@
+http://stackoverflow.com/questions/6936140/creating-a-simple-user-group-model-with-permissions-with-hibernate-annotations
+http://uaihebert.com/?p=1674&page=21
